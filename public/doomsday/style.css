@@ -1468,6 +1468,102 @@ body {
   color: #fff;
 }
 
+/* ===== Checklist Bloqueado para Visitantes ===== */
+.signup-gate {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-md);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(56, 189, 248, 0.08));
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-glow-purple);
+  animation: cardEnter 0.4s ease-out;
+}
+
+.signup-gate[hidden] {
+  display: none;
+}
+
+.signup-gate-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.25);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  color: var(--text-accent);
+}
+
+.signup-gate-text h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.signup-gate-text p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.signup-gate-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* Cards visíveis, mas sem interação de marcação */
+body.is-visitor .movie-card {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+body.is-visitor .movie-card:hover {
+  transform: none;
+  background: var(--bg-card);
+  box-shadow: none;
+}
+
+body.is-visitor .movie-card:hover::before {
+  opacity: 0;
+}
+
+body.is-visitor .checkbox-wrapper input[type="checkbox"] {
+  pointer-events: none;
+}
+
+body.is-visitor .checkmark {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Cadeado no lugar do "check" */
+body.is-visitor .checkmark::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  background-color: var(--text-muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+body.is-visitor .checkmark svg {
+  display: none;
+}
+
+body.is-visitor .reset-btn {
+  display: none;
+}
+
 /* ===== Footer ===== */
 .footer {
   text-align: center;
@@ -1477,6 +1573,28 @@ body {
 }
 
 /* ===== Responsive ===== */
+
+/* Telas estreitas ou baixas: o topo fixo não cabe, então a página inteira rola */
+@media (max-width: 640px), (max-height: 640px) {
+  body {
+    height: auto;
+    overflow: auto;
+  }
+
+  .app-container {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .movie-scroll-container {
+    flex: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
 @media (max-width: 640px) {
   .app-container {
     padding: var(--space-md);
@@ -1501,12 +1619,22 @@ body {
   }
 
   .hero {
-    min-height: 420px;
     border-radius: var(--radius-lg);
   }
 
+  /* Sinopse e contagem regressiva empilhadas, cada uma na largura total */
   .hero-content {
+    grid-template-columns: 1fr;
     padding: var(--space-md);
+  }
+
+  .countdown-widget {
+    max-width: none;
+    align-self: stretch;
+  }
+
+  .credit-separator {
+    display: none;
   }
 
   .hero-synopsis {
@@ -1553,11 +1681,25 @@ body {
     border-top: 1px solid rgba(255, 255, 255, 0.04);
   }
 
+  /* A faixa da data só existe para filmes já assistidos */
+  .movie-card:not(.watched) .card-right {
+    display: none;
+  }
+
   .progress-stats {
     gap: var(--space-md);
   }
 
   .card-title {
     font-size: 0.92rem;
+  }
+
+  .signup-gate {
+    grid-template-columns: auto 1fr;
+    padding: var(--space-md);
+  }
+
+  .signup-gate-actions {
+    grid-column: 1 / -1;
   }
 }

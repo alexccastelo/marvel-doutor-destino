@@ -157,6 +157,11 @@ const userLoggedActions = document.getElementById("userLoggedActions");
 const btnSwitchUser = document.getElementById("btnSwitchUser");
 const btnLogout = document.getElementById("btnLogout");
 
+// Aviso de cadastro (somente visitantes)
+const signupGate = document.getElementById("signupGate");
+const btnGateRegister = document.getElementById("btnGateRegister");
+const btnGateLogin = document.getElementById("btnGateLogin");
+
 // Elementos do Modal de Autenticação
 const authModal = document.getElementById("authModal");
 const authModalClose = document.getElementById("authModalClose");
@@ -208,6 +213,8 @@ resetBtn.addEventListener("click", handleReset);
 btnOpenAuthModal.addEventListener("click", () => openAuthModal("login"));
 btnSwitchUser.addEventListener("click", () => openAuthModal("login"));
 btnLogout.addEventListener("click", handleLogout);
+btnGateRegister.addEventListener("click", () => openAuthModal("register"));
+btnGateLogin.addEventListener("click", () => openAuthModal("login"));
 
 authModalClose.addEventListener("click", closeAuthModal);
 tabBtnLogin.addEventListener("click", () => switchAuthTab("login"));
@@ -273,10 +280,14 @@ function updateUserUI() {
     userLoggedActions.style.display = "flex";
   } else {
     userNameDisplay.textContent = "Visitante";
-    userSubDisplay.textContent = "Faça login para salvar seu progresso";
+    userSubDisplay.textContent = "Cadastre-se para liberar o checklist";
     btnOpenAuthModal.style.display = "inline-flex";
     userLoggedActions.style.display = "none";
   }
+
+  // Sem cadastro o checklist fica visível, mas bloqueado
+  document.body.classList.toggle("is-visitor", !currentUser);
+  signupGate.hidden = !!currentUser;
 }
 
 function openAuthModal(defaultTab = "login") {
@@ -551,15 +562,7 @@ async function removeMovie(movieId) {
 }
 
 async function resetAll() {
-  if (!currentUser) {
-    watchedMap = {};
-    watchedOrders = {};
-    saveLocalUserData(0, { map: {}, orders: {} });
-    renderMovies();
-    updateProgress();
-    showToast("Progresso limpo.");
-    return;
-  }
+  if (!currentUser) return;
 
   if (!confirm(`Deseja resetar todo o progresso do perfil de ${currentUser.name}?`)) return;
 
@@ -704,7 +707,8 @@ function renderMovies() {
           type="checkbox"
           id="check-${movie.id}"
           ${isWatched ? "checked" : ""}
-          aria-label="Marcar ${movie.title} como assistido"
+          ${currentUser ? "" : "disabled"}
+          aria-label="${currentUser ? "Marcar" : "Cadastre-se para marcar"} ${movie.title} como assistido"
         />
         <div class="checkmark">
           <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -768,6 +772,12 @@ function renderMovies() {
     });
 
     card.addEventListener("click", (e) => {
+      // Visitante: qualquer clique no card leva ao cadastro
+      if (!currentUser) {
+        openAuthModal("register");
+        showToast("Cadastre-se para marcar os filmes assistidos!");
+        return;
+      }
       if (
         e.target === checkbox ||
         e.target.closest(".checkbox-wrapper") ||
@@ -786,8 +796,8 @@ function renderMovies() {
 async function handleToggle(movieId, checkbox, card) {
   if (!currentUser) {
     checkbox.checked = !checkbox.checked;
-    openAuthModal("login");
-    showToast("Cadastre-se ou faça login para salvar seu progresso!");
+    openAuthModal("register");
+    showToast("Cadastre-se para marcar os filmes assistidos!");
     return;
   }
 

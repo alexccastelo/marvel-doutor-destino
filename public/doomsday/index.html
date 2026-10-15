@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
 
   <!-- Ao alterar app.js ou style.css, incremente ?v= para furar o cache de 1 dia do navegador -->
-  <link rel="stylesheet" href="/doomsday/style.css?v=3" />
+  <link rel="stylesheet" href="/doomsday/style.css?v=4" />
 </head>
 <body>
   <!-- Animated background orbs -->
@@ -31,7 +31,7 @@
           <span class="user-avatar-badge" id="userAvatarBadge">👤</span>
           <div class="user-info-text">
             <span class="user-name-display" id="userNameDisplay">Visitante</span>
-            <span class="user-sub-display" id="userSubDisplay">Faça login para salvar seu progresso</span>
+            <span class="user-sub-display" id="userSubDisplay">Cadastre-se para liberar o checklist</span>
           </div>
         </div>
         <div class="user-bar-right">
@@ -176,6 +176,21 @@
 
     <!-- Área Rolável Exclusiva da Lista de Filmes -->
     <div class="movie-scroll-container" id="movieScrollContainer">
+      <!-- Aviso exibido apenas para visitantes: o checklist exige cadastro -->
+      <section class="signup-gate" id="signupGate" aria-labelledby="signupGateTitle" hidden>
+        <span class="signup-gate-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </span>
+        <div class="signup-gate-text">
+          <h2 id="signupGateTitle">Cadastre-se para usar o checklist</h2>
+          <p>O cadastro é gratuito e sem senha: só nome, e-mail e WhatsApp. Depois disso você marca cada produção assistida e seu progresso fica salvo no seu perfil.</p>
+        </div>
+        <div class="signup-gate-actions">
+          <button type="button" class="btn-auth-primary" id="btnGateRegister">Criar perfil grátis</button>
+          <button type="button" class="link-btn" id="btnGateLogin">Já tenho cadastro</button>
+        </div>
+      </section>
+
       <main class="movie-list" id="movieList" aria-label="Lista de filmes e séries"></main>
 
       <!-- Footer com Selo do Desenvolvedor e Copyright -->
@@ -300,6 +315,6 @@
     <div class="toast" id="toastNotification" role="alert" aria-live="polite"></div>
   </div>
 
-  <script src="/doomsday/app.js?v=3"></script>
+  <script src="/doomsday/app.js?v=4"></script>
 </body>
 </html>
