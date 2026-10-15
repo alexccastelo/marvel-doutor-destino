@@ -31,11 +31,12 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   let pathname = parsedUrl.pathname;
 
-  // Espelha os rewrites do vercel.json: /doomsday/* é servido a partir da raiz
-  if (pathname === '/doomsday' || pathname === '/doomsday/') {
-    pathname = '/';
-  } else if (pathname.startsWith('/doomsday/')) {
+  // Espelha os rewrites do vercel.json: /doomsday/api/* vai para /api/*,
+  // e a raiz mostra a app (fora do domínio nexum.id, como no localhost)
+  if (pathname.startsWith('/doomsday/api/')) {
     pathname = pathname.slice('/doomsday'.length);
+  } else if (pathname === '/') {
+    pathname = '/doomsday';
   }
 
   // Rotas de API
@@ -67,13 +68,18 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Servir arquivos estáticos da pasta public/
-  let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
+  let filePath = path.join(PUBLIC_DIR, pathname);
 
   // Evitar directory traversal
   if (!filePath.startsWith(PUBLIC_DIR)) {
     res.statusCode = 403;
     res.end('Acesso proibido');
     return;
+  }
+
+  // Diretórios servem o próprio index.html (ex.: /doomsday)
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+    filePath = path.join(filePath, 'index.html');
   }
 
   fs.stat(filePath, (err, stats) => {

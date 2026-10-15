@@ -12,7 +12,7 @@ A lista oficial está em [ListadefilmeseseriesparaVingadoresDoomsday.md](Listade
 
 ## Stack
 
-- **Frontend:** HTML, CSS e JavaScript puros em `public/`, sem framework e sem etapa de build.
+- **Frontend:** HTML, CSS e JavaScript puros em `public/doomsday/`, sem framework e sem etapa de build.
 - **Backend:** handlers Node no formato de Vercel Functions em `api/`.
 - **Banco:** Postgres no [Neon](https://neon.tech), provisionado pelo Marketplace da Vercel
   (recurso `marvel-doutor-destino-db`), acessado com `@neondatabase/serverless`.
@@ -20,7 +20,7 @@ A lista oficial está em [ListadefilmeseseriesparaVingadoresDoomsday.md](Listade
 ## Estrutura
 
 ```
-public/              Site estático (index.html, app.js, style.css, assets/)
+public/doomsday/     Site estático (index.html, app.js, style.css, assets/)
 api/auth.js          Cadastro, login, logout e usuário da sessão
 api/movies.js        GET/POST/DELETE /api/movies (progresso do usuário logado)
 api/_lib/db.js       Conexão com o Neon e definição do esquema
@@ -75,7 +75,7 @@ O app sobe em http://localhost:3000/doomsday (use a variável `PORT` para trocar
 | `DELETE` | `/api/movies?action=reset` | Apaga todo o progresso do usuário |
 
 Todas as rotas de `/api/movies` exigem sessão válida e retornam 401 sem ela. O `id` do filme
-precisa ser um inteiro de 1 a 15. Se a lista `MOVIES` em `public/app.js` mudar, atualize também
+precisa ser um inteiro de 1 a 15. Se a lista `MOVIES` em `public/doomsday/app.js` mudar, atualize também
 `TOTAL_MOVIES` em `api/movies.js` e o `CHECK` da tabela em `api/_lib/db.js`.
 
 ## Deploy
@@ -85,22 +85,26 @@ uma função. O `DATABASE_URL` já está configurado em todos os ambientes pela 
 Neon. Se o esquema mudar, rode `npm run db:migrate` antes do deploy.
 
 O navegador guarda `app.js` e `style.css` em cache por 1 dia. Ao alterar esses arquivos,
-incremente o `?v=` nos links em `public/index.html` para que todos recebam a versão nova.
+incremente o `?v=` nos links em `public/doomsday/index.html` para que todos recebam a versão nova.
 
 ### URLs e o prefixo `/doomsday`
 
 | URL | Comportamento |
 |---|---|
 | https://nexum.id/doomsday | URL oficial da app |
-| https://nexum.id/ | Redireciona (307) para `/doomsday` (regra no `vercel.json`) |
+| https://nexum.id/ | 404: reservado para o futuro site institucional da Nexum |
 | https://www.nexum.id/* | Redireciona (308) para `nexum.id` mantendo o caminho (configuração de domínio do projeto) |
-| https://marvel-doutor-destino.vercel.app/ | App na raiz; `/doomsday` também funciona |
+| https://marvel-doutor-destino.vercel.app/ | App na raiz (rewrite para `/doomsday`); `/doomsday` também funciona |
 
-A página referencia todos os assets e a API com o prefixo absoluto `/doomsday/...`, e o
-`vercel.json` reescreve `/doomsday/:path*` para a raiz do projeto (o `server.js` faz o mesmo
-localmente). Assim a app funciona em qualquer domínio do projeto e também por trás de um proxy
-em `/doomsday`, caso a raiz de `nexum.id` passe a ser outro site. Ao criar novos links para
-assets ou rotas da API, use sempre o prefixo `/doomsday/`.
+Os arquivos estáticos ficam em `public/doomsday/`, então a raiz do projeto não tem conteúdo. O
+`vercel.json` reescreve `/doomsday/api/:path*` para as funções em `/api/*`, e reescreve `/` para
+`/doomsday` em qualquer host **exceto** `nexum.id` (o `server.js` faz o mesmo localmente). A página
+referencia todos os assets e a API com o prefixo absoluto `/doomsday/...`; ao criar novos links,
+use sempre esse prefixo.
+
+Quando o site institucional for publicado, o domínio `nexum.id` deve sair deste projeto e ir
+para o projeto do site, que repassa `/doomsday` e `/doomsday/:path*` para
+`https://marvel-doutor-destino.vercel.app/doomsday/...` com um rewrite externo.
 
 ## Limitações conhecidas
 
