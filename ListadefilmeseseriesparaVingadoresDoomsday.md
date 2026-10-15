@@ -1,0 +1,17 @@
+A Marvel Studios divulgou a lista oficial de 15 produções essenciais (14 filmes e 1 série) para assistir antes da estreia de Vingadores: Doutor Destino (Avengers: Doomsday), marcada para 17 de dezembro de 2026.
+A sequência recomendada (que mistura clássicos dos X-Men, marcos do MCU e lançamentos recentes da Saga do Multiverso) é a seguinte:
+1. X-Men: O Filme (2000)
+2. X-Men 2 (2003)
+3. Capitão América: O Primeiro Vingador (2011)
+4. Os Vingadores (2012)
+5. Vingadores: Guerra Infinita (2018)
+6. Vingadores: Ultimato (2019) (que conta com um relançamento especial nos cinemas trazendo novas cenas conectadas ao filme)
+7. Loki (Temporadas 1 e 2 - Série)
+8. Shang-Chi e a Lenda dos Dez Anéis (2021)
+9. Homem-Aranha: Sem Volta para Casa (2021)
+10. Doutor Estranho no Multiverso da Loucura (2022)
+11. Pantera Negra: Wakanda para Sempre (2022)
+12. Deadpool e Wolverine (2024)
+13. Capitão América: Admirável Mundo Novo (2025)
+14. Thunderbolts* (2025)
+15. Quarteto Fantástico: Primeiros Passos (2025)
