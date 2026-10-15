@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Checklist Vingadores: Doutor Destino — Filmes e Séries Essenciais</title>
-  <meta name="description" content="Acompanhe sua jornada pelos 15 filmes e séries essenciais antes de assistir Vingadores: Doutor Destino (Avengers: Doomsday). Marque o que já assistiu e fique pronto para dezembro de 2026." />
+  <meta name="description" content="Acompanhe sua jornada pelos 15 filmes e séries essenciais antes de assistir Vingadores: Doutor Destino (Avengers: Doomsday). Multi-usuário com persistência em SQLite, contagem regressiva e edição de datas." />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -22,65 +22,281 @@
   </div>
 
   <div class="app-container">
-    <!-- Hero Banner -->
-    <header class="hero" id="hero">
-      <img
-        class="hero-image"
-        src="assets/hero-banner.jpg"
-        alt="Portal do Multiverso — arte conceitual para Vingadores Doutor Destino"
-        loading="eager"
-        fetchpriority="high"
-      />
-      <div class="hero-overlay" aria-hidden="true"></div>
-      <div class="hero-content">
-        <div class="hero-badge">🎬 Lista Oficial Marvel Studios</div>
-        <h1>Vingadores: Doutor Destino</h1>
-        <p class="hero-subtitle">
-          15 produções essenciais — estreia em <span class="hero-date">17 de dezembro de 2026</span>
-        </p>
-      </div>
-    </header>
+    <!-- Área Fixa no Topo (Barra de Usuário, Banner e Progresso) -->
+    <div class="fixed-top-header" id="fixedTopHeader">
+      <!-- Barra Superior de Usuário (Multi-usuário) -->
+      <nav class="user-bar" id="userBar" aria-label="Gerenciamento de usuário">
+        <div class="user-bar-left">
+          <span class="user-avatar-badge" id="userAvatarBadge">👤</span>
+          <div class="user-info-text">
+            <span class="user-name-display" id="userNameDisplay">Visitante</span>
+            <span class="user-sub-display" id="userSubDisplay">Faça login para salvar seu progresso</span>
+          </div>
+        </div>
+        <div class="user-bar-right">
+          <!-- Botão quando deslogado -->
+          <button type="button" class="btn-auth-primary" id="btnOpenAuthModal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Entrar / Cadastrar
+          </button>
 
-    <!-- Completed Banner -->
-    <div class="completed-banner" id="completedBanner">
-      <h2>🎉 Missão Completa!</h2>
-      <p>Você assistiu todas as produções. Está pronto para Vingadores: Doutor Destino!</p>
+          <!-- Menu quando logado -->
+          <div class="user-logged-actions" id="userLoggedActions" style="display: none;">
+            <button type="button" class="btn-user-switch" id="btnSwitchUser" title="Trocar de usuário">
+              Trocar Usuário
+            </button>
+            <button type="button" class="btn-user-logout" id="btnLogout" title="Sair da conta">
+              Sair
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Hero Banner Fixo com Sinopse e Contador -->
+      <header class="hero" id="hero">
+        <img
+          class="hero-image"
+          src="assets/hero-banner.jpg"
+          alt="Portal do Multiverso — arte conceitual para Vingadores Doutor Destino"
+          loading="eager"
+          fetchpriority="high"
+        />
+        <div class="hero-overlay" aria-hidden="true"></div>
+        <div class="hero-content">
+          <div class="hero-content-main">
+            <div class="hero-titles">
+              <div class="hero-badge">🎬 Lista Oficial Marvel Studios</div>
+              <h1>Vingadores: Doutor Destino</h1>
+              <p class="hero-subtitle">
+                15 produções essenciais — estreia em <span class="hero-date">17 de dezembro de 2026 às 00:00</span>
+              </p>
+            </div>
+
+            <!-- Sinopse Oficial -->
+            <section class="hero-synopsis" aria-label="Sinopse de Vingadores: Doutor Destino">
+              <div class="synopsis-header">
+                <span class="synopsis-badge">📖 Sinopse</span>
+                <span class="synopsis-tag">Saga do Multiverso</span>
+              </div>
+              <p class="synopsis-text">
+                Em <strong>Vingadores: Doutor Destino (Avengers: Doomsday)</strong>, heróis de três universos entram em rota de colisão diante de uma ameaça à própria existência. 
+                <span class="synopsis-cast-highlight">Robert Downey Jr.</span> interpreta o <strong>Doutor Destino</strong> em um elenco que inclui 
+                <em>Chris Evans, Chris Hemsworth, Pedro Pascal, Anthony Mackie</em> e <em>Florence Pugh</em>.
+              </p>
+              <div class="synopsis-credits">
+                <div class="credit-item">
+                  <span class="credit-label">Direção</span>
+                  <span class="credit-value">Anthony e Joe Russo</span>
+                </div>
+                <div class="credit-separator" aria-hidden="true">•</div>
+                <div class="credit-item">
+                  <span class="credit-label">Roteiro</span>
+                  <span class="credit-value">Stephen McFeely</span>
+                </div>
+                <div class="credit-separator" aria-hidden="true">•</div>
+                <div class="credit-item">
+                  <span class="credit-label">Quadrinhos</span>
+                  <span class="credit-value">Stan Lee & Jack Kirby</span>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Contador Regressivo Fixo no Banner -->
+          <div class="countdown-widget" id="countdownWidget" aria-label="Contagem regressiva para a estreia">
+            <div class="countdown-label">
+              <span class="countdown-pulse"></span>
+              CONTAGEM REGRESSIVA PARA A ESTREIA
+            </div>
+            <div class="countdown-timer">
+              <div class="countdown-segment">
+                <span class="countdown-value" id="cdDays">---</span>
+                <span class="countdown-unit">DIAS</span>
+              </div>
+              <span class="countdown-dots" aria-hidden="true">:</span>
+              <div class="countdown-segment">
+                <span class="countdown-value" id="cdHours">--</span>
+                <span class="countdown-unit">HORAS</span>
+              </div>
+              <span class="countdown-dots" aria-hidden="true">:</span>
+              <div class="countdown-segment">
+                <span class="countdown-value" id="cdMinutes">--</span>
+                <span class="countdown-unit">MIN</span>
+              </div>
+              <span class="countdown-dots" aria-hidden="true">:</span>
+              <div class="countdown-segment">
+                <span class="countdown-value" id="cdSeconds">--</span>
+                <span class="countdown-unit">SEG</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Completed Banner -->
+      <div class="completed-banner" id="completedBanner">
+        <h2>🎉 Missão Completa!</h2>
+        <p id="completedBannerMessage">Você assistiu todas as 15 produções. Está 100% preparado para Vingadores: Doutor Destino!</p>
+      </div>
+
+      <!-- Progress & DB Status -->
+      <section class="progress-section" id="progressSection" aria-label="Progresso e status">
+        <div class="progress-header">
+          <div class="progress-title-group">
+            <span class="progress-label">Progresso</span>
+            <span class="db-badge" id="dbStatusBadge" title="Status de persistência no SQLite">
+              <span class="db-status-dot"></span>
+              <span id="dbStatusText">SQLite conectando...</span>
+            </span>
+          </div>
+          <span class="progress-count"><span id="watchedCount">0</span> / <span id="totalCount">15</span></span>
+        </div>
+        <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="15">
+          <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <div class="progress-stats">
+          <div class="stat">
+            <span class="stat-value" id="remainingStat">15</span>
+            <span class="stat-label">Restantes</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="percentStat">0%</span>
+            <span class="stat-label">Concluído</span>
+          </div>
+          <div class="progress-actions">
+            <button class="reset-btn" id="resetBtn" title="Resetar o progresso deste usuário">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Resetar
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <!-- Progress -->
-    <section class="progress-section" id="progressSection" aria-label="Progresso">
-      <div class="progress-header">
-        <span class="progress-label">Progresso</span>
-        <span class="progress-count"><span id="watchedCount">0</span> / <span id="totalCount">15</span></span>
-      </div>
-      <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="15">
-        <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
-      </div>
-      <div class="progress-stats">
-        <div class="stat">
-          <span class="stat-value" id="remainingStat">15</span>
-          <span class="stat-label">Restantes</span>
+    <!-- Área Rolável Exclusiva da Lista de Filmes -->
+    <div class="movie-scroll-container" id="movieScrollContainer">
+      <main class="movie-list" id="movieList" aria-label="Lista de filmes e séries"></main>
+
+      <!-- Footer com Selo do Desenvolvedor e Copyright -->
+      <footer class="footer">
+        <div class="footer-container">
+          <div class="footer-badge-wrapper">
+            <a href="https://nexumid.com" target="_blank" rel="noopener noreferrer" class="dev-badge-link" title="Desenvolvido por Nexum ID" aria-label="Nexum ID">
+              <img 
+                src="assets/nexum-id-developed-by-selo-sobre-profundo-320w.png" 
+                srcset="assets/nexum-id-developed-by-selo-sobre-profundo-320w.png 1x, assets/nexum-id-developed-by-selo-sobre-profundo-320w@2x.png 2x" 
+                alt="Desenvolvido por Nexum ID" 
+                class="dev-badge-img"
+                width="160" 
+                height="23"
+                loading="lazy"
+              />
+            </a>
+          </div>
+
+          <div class="footer-divider" aria-hidden="true"></div>
+
+          <div class="footer-text-group">
+            <p class="footer-copyright">
+              &copy; 2026 <strong>Nexum ID</strong>. Todos os direitos reservados.
+            </p>
+            <p class="footer-disclaimer">
+              Guia cronológico e checklist de filmes para <em>Vingadores: Doutor Destino (Avengers: Doomsday)</em>. Produção baseada nas obras da Marvel Studios. Todos os personagens, títulos e marcas registradas pertencem à Marvel Studios / The Walt Disney Company.
+            </p>
+          </div>
         </div>
-        <div class="stat">
-          <span class="stat-value" id="percentStat">0%</span>
-          <span class="stat-label">Concluído</span>
+      </footer>
+    </div>
+
+    <!-- Modal de Autenticação (Login / Cadastro Simples) -->
+    <dialog class="auth-modal" id="authModal">
+      <div class="auth-modal-content">
+        <div class="auth-modal-header">
+          <div class="auth-nav-tabs" role="tablist">
+            <button type="button" class="auth-tab-btn active" id="tabBtnLogin" role="tab" aria-selected="true">
+              Já sou cadastrado
+            </button>
+            <button type="button" class="auth-tab-btn" id="tabBtnRegister" role="tab" aria-selected="false">
+              Criar Perfil
+            </button>
+          </div>
+          <button type="button" class="date-modal-close" id="authModalClose" aria-label="Fechar">&times;</button>
         </div>
-        <div style="margin-left: auto; display: flex; align-items: center;">
-          <button class="reset-btn" id="resetBtn" title="Resetar progresso">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-            Resetar
+
+        <p class="auth-modal-desc" id="authModalDesc">
+          Acesse com seu e-mail e WhatsApp para acompanhar seu checklist pessoal.
+        </p>
+
+        <!-- Formulário de Login -->
+        <form id="formLogin" class="auth-form-body">
+          <div class="auth-field">
+            <label for="inputLoginEmail">E-mail</label>
+            <input type="email" id="inputLoginEmail" placeholder="exemplo@email.com" required autocomplete="email" />
+          </div>
+          <div class="auth-field">
+            <label for="inputLoginWhatsapp">WhatsApp (com DDD)</label>
+            <input type="tel" id="inputLoginWhatsapp" placeholder="(11) 98765-4321" required autocomplete="tel" />
+          </div>
+          <div class="auth-error" id="loginErrorBox" style="display: none;"></div>
+          <button type="submit" class="btn-auth-submit" id="btnSubmitLogin">
+            Entrar no Checklist
           </button>
-        </div>
+          <div class="auth-switch-link">
+            Novo por aqui? <button type="button" class="link-btn" id="linkToRegister">Crie seu perfil em segundos</button>
+          </div>
+        </form>
+
+        <!-- Formulário de Cadastro Simples -->
+        <form id="formRegister" class="auth-form-body" style="display: none;">
+          <div class="auth-field">
+            <label for="inputRegName">Nome Completo</label>
+            <input type="text" id="inputRegName" placeholder="Como quer ser chamado?" required autocomplete="name" />
+          </div>
+          <div class="auth-field">
+            <label for="inputRegEmail">E-mail</label>
+            <input type="email" id="inputRegEmail" placeholder="seu@email.com" required autocomplete="email" />
+          </div>
+          <div class="auth-field">
+            <label for="inputRegWhatsapp">WhatsApp (com DDD)</label>
+            <input type="tel" id="inputRegWhatsapp" placeholder="(11) 98765-4321" required autocomplete="tel" />
+          </div>
+          <div class="auth-note">
+            🛡️ <strong>Sem senha!</strong> Você fará login no futuro apenas informando seu E-mail e WhatsApp.
+          </div>
+          <div class="auth-error" id="regErrorBox" style="display: none;"></div>
+          <button type="submit" class="btn-auth-submit" id="btnSubmitRegister">
+            Cadastrar e Começar
+          </button>
+          <div class="auth-switch-link">
+            Já tem um perfil? <button type="button" class="link-btn" id="linkToLogin">Entrar na minha conta</button>
+          </div>
+        </form>
       </div>
-    </section>
+    </dialog>
 
-    <!-- Movie List -->
-    <main class="movie-list" id="movieList" aria-label="Lista de filmes e séries"></main>
+    <!-- Modal para Edição de Data -->
+    <dialog class="date-modal" id="dateModal">
+      <div class="date-modal-content">
+        <div class="date-modal-header">
+          <h3 id="dateModalTitle">Alterar data assistida</h3>
+          <button type="button" class="date-modal-close" id="dateModalClose" aria-label="Fechar">&times;</button>
+        </div>
+        <form id="dateModalForm" class="date-modal-form">
+          <p class="date-modal-subtitle" id="dateModalMovieName"></p>
+          <div class="date-input-group">
+            <label for="dateModalInput">Data em que assistiu:</label>
+            <input type="date" id="dateModalInput" required max="2099-12-31" />
+          </div>
+          <div class="date-modal-actions">
+            <button type="button" class="btn-modal-cancel" id="dateModalCancel">Cancelar</button>
+            <button type="submit" class="btn-modal-save" id="dateModalSave">Salvar Data</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <p>Lista oficial divulgada pela Marvel Studios • Dados de streaming podem variar por região</p>
-    </footer>
+    <!-- Toast de Notificação -->
+    <div class="toast" id="toastNotification" role="alert" aria-live="polite"></div>
   </div>
 
   <script src="app.js"></script>
