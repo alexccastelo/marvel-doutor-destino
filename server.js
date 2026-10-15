@@ -29,7 +29,14 @@ const MIME_TYPES = {
 
 const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const pathname = parsedUrl.pathname;
+  let pathname = parsedUrl.pathname;
+
+  // Espelha os rewrites do vercel.json: /doomsday/* é servido a partir da raiz
+  if (pathname === '/doomsday' || pathname === '/doomsday/') {
+    pathname = '/';
+  } else if (pathname.startsWith('/doomsday/')) {
+    pathname = pathname.slice('/doomsday'.length);
+  }
 
   // Rotas de API
   const isMoviesApi = pathname === '/api/movies' || pathname.startsWith('/api/movies/');

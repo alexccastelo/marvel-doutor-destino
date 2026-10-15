@@ -46,7 +46,7 @@ npm run db:migrate
 npm run dev
 ```
 
-O app sobe em http://localhost:3000 (use a variável `PORT` para trocar a porta). O `server.js` e o
+O app sobe em http://localhost:3000/doomsday (use a variável `PORT` para trocar a porta). O `server.js` e o
 `scripts/migrate.js` leem o `DATABASE_URL` do `.env.local`, que fica fora do Git.
 
 > **Atenção:** o ambiente `development` usa o mesmo banco da produção. Dados criados localmente
@@ -86,6 +86,21 @@ Neon. Se o esquema mudar, rode `npm run db:migrate` antes do deploy.
 
 O navegador guarda `app.js` e `style.css` em cache por 1 dia. Ao alterar esses arquivos,
 incremente o `?v=` nos links em `public/index.html` para que todos recebam a versão nova.
+
+### URLs e o prefixo `/doomsday`
+
+| URL | Comportamento |
+|---|---|
+| https://nexum.id/doomsday | URL oficial da app |
+| https://nexum.id/ | Redireciona (307) para `/doomsday` (regra no `vercel.json`) |
+| https://www.nexum.id/* | Redireciona (308) para `nexum.id` mantendo o caminho (configuração de domínio do projeto) |
+| https://marvel-doutor-destino.vercel.app/ | App na raiz; `/doomsday` também funciona |
+
+A página referencia todos os assets e a API com o prefixo absoluto `/doomsday/...`, e o
+`vercel.json` reescreve `/doomsday/:path*` para a raiz do projeto (o `server.js` faz o mesmo
+localmente). Assim a app funciona em qualquer domínio do projeto e também por trás de um proxy
+em `/doomsday`, caso a raiz de `nexum.id` passe a ser outro site. Ao criar novos links para
+assets ou rotas da API, use sempre o prefixo `/doomsday/`.
 
 ## Limitações conhecidas
 
