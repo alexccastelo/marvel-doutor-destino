@@ -84,6 +84,9 @@ O deploy é feito na Vercel: `public/` é servido como site estático e cada arq
 uma função. O `DATABASE_URL` já está configurado em todos os ambientes pela integração com o
 Neon. Se o esquema mudar, rode `npm run db:migrate` antes do deploy.
 
+O navegador guarda `app.js` e `style.css` em cache por 1 dia. Ao alterar esses arquivos,
+incremente o `?v=` nos links em `public/index.html` para que todos recebam a versão nova.
+
 ## Limitações conhecidas
 
 - **Login fraco:** basta saber o e-mail e o WhatsApp de alguém para entrar na conta dessa pessoa.
