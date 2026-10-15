@@ -1,6 +1,6 @@
 /**
  * Vingadores: Doutor Destino — Checklist App
- * Multi-usuário com persistência em SQLite,
+ * Multi-usuário com persistência em Postgres (Neon) e sessão por cookie,
  * Autenticação simples (Nome, E-mail e WhatsApp),
  * Contador regressivo para 17/12/2026 às 00:00 e edição de datas.
  */
@@ -198,14 +198,9 @@ initPhoneMasks();
 
 if (currentUser) {
   loadUserData(currentUser.id);
+  verifySession();
 } else {
-  // Visitante: carrega vazio ou demonstração
-  const local = loadLocalUserData(0);
-  watchedMap = local.map;
-  watchedOrders = local.orders;
-  renderMovies();
-  updateProgress();
-  setDbStatus("offline", "Modo Visitante (Faça Login)");
+  showVisitorMode();
 }
 
 // ===== Eventos =====
@@ -278,7 +273,7 @@ function updateUserUI() {
     userLoggedActions.style.display = "flex";
   } else {
     userNameDisplay.textContent = "Visitante";
-    userSubDisplay.textContent = "Faça login para salvar seu progresso no SQLite";
+    userSubDisplay.textContent = "Faça login para salvar seu progresso";
     btnOpenAuthModal.style.display = "inline-flex";
     userLoggedActions.style.display = "none";
   }
@@ -324,7 +319,7 @@ function switchAuthTab(tab) {
     tabBtnLogin.setAttribute("aria-selected", "false");
     formRegister.style.display = "flex";
     formLogin.style.display = "none";
-    authModalDesc.textContent = "Crie seu perfil em poucos segundos para salvar o progresso no SQLite (sem necessidade de senha).";
+    authModalDesc.textContent = "Crie seu perfil em poucos segundos para salvar seu progresso (sem necessidade de senha).";
     inputRegName.focus();
   }
 }
@@ -382,7 +377,7 @@ async function handleRegisterSubmit(e) {
     return;
   }
 
-  setDbStatus("syncing", "Criando perfil no SQLite...");
+  setDbStatus("syncing", "Criando perfil...");
 
   try {
     const res = await fetch(API_AUTH, {
@@ -410,14 +405,45 @@ async function handleRegisterSubmit(e) {
   }
 }
 
-function handleLogout() {
+async function handleLogout() {
+  try {
+    await fetch(API_AUTH, { method: "DELETE" });
+  } catch (err) {
+    console.warn("Erro ao encerrar sessão no servidor:", err);
+  }
   saveUserSession(null);
+  showVisitorMode("Desconectado");
+  showToast("Você saiu da conta.");
+}
+
+// Confere no servidor se o cookie de sessão ainda é válido
+async function verifySession() {
+  try {
+    const res = await fetch(API_AUTH, { cache: "no-store" });
+    if (res.status === 401) {
+      handleSessionExpired();
+      return;
+    }
+    const data = await res.json();
+    if (data.success && data.user) saveUserSession(data.user);
+  } catch (err) {
+    console.warn("Não foi possível verificar a sessão:", err);
+  }
+}
+
+function handleSessionExpired() {
+  if (!currentUser) return;
+  saveUserSession(null);
+  showVisitorMode("Sessão expirada");
+  showToast("Sua sessão expirou. Entre novamente para continuar.");
+}
+
+function showVisitorMode(statusText = "Modo Visitante (Faça Login)") {
   watchedMap = {};
   watchedOrders = {};
   renderMovies();
   updateProgress();
-  setDbStatus("offline", "Desconectado");
-  showToast("Você saiu da conta.");
+  setDbStatus("offline", statusText);
 }
 
 function showError(box, msg) {
@@ -428,7 +454,7 @@ function showError(box, msg) {
 // ===== 2. Carregamento e Sincronização de Filmes por Usuário =====
 
 async function loadUserData(userId) {
-  setDbStatus("syncing", "Carregando checklist do SQLite...");
+  setDbStatus("syncing", "Carregando seu checklist...");
 
   // Fallback rápido local enquanto a API responde
   const local = loadLocalUserData(userId);
@@ -438,7 +464,11 @@ async function loadUserData(userId) {
   updateProgress();
 
   try {
-    const res = await fetch(`${API_MOVIES}?userId=${userId}`, { cache: "no-store" });
+    const res = await fetch(API_MOVIES, { cache: "no-store" });
+    if (res.status === 401) {
+      handleSessionExpired();
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const result = await res.json();
@@ -450,12 +480,12 @@ async function loadUserData(userId) {
       saveLocalUserData(userId, { map: watchedMap, orders: watchedOrders });
       renderMovies();
       updateProgress();
-      setDbStatus("online", "SQLite sincronizado");
+      setDbStatus("online", "Sincronizado");
     } else {
-      setDbStatus("online", "SQLite conectado");
+      setDbStatus("online", "Conectado");
     }
   } catch (err) {
-    console.warn("Aviso ao carregar do SQLite:", err);
+    console.warn("Aviso ao carregar do servidor:", err);
     setDbStatus("offline", "Usando cache local");
   }
 }
@@ -467,18 +497,21 @@ async function saveMovie(movieId, watchedDate, watchedOrder) {
     return;
   }
 
-  setDbStatus("syncing", "Salvando no SQLite...");
+  setDbStatus("syncing", "Salvando...");
   try {
     const res = await fetch(API_MOVIES, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        userId: currentUser.id,
         id: movieId,
         watched_date: watchedDate,
         watched_order: watchedOrder,
       }),
     });
+    if (res.status === 401) {
+      handleSessionExpired();
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data.item && data.item.watched_order) {
@@ -490,9 +523,9 @@ async function saveMovie(movieId, watchedDate, watchedOrder) {
         orderBadgeEl.style.display = "inline-flex";
       }
     }
-    setDbStatus("online", "SQLite sincronizado");
+    setDbStatus("online", "Sincronizado");
   } catch (err) {
-    console.warn("Erro ao salvar no SQLite:", err);
+    console.warn("Erro ao salvar no servidor:", err);
     setDbStatus("offline", "Salvo no cache local");
   }
 }
@@ -500,15 +533,19 @@ async function saveMovie(movieId, watchedDate, watchedOrder) {
 async function removeMovie(movieId) {
   if (!currentUser) return;
 
-  setDbStatus("syncing", "Atualizando SQLite...");
+  setDbStatus("syncing", "Atualizando...");
   try {
-    const res = await fetch(`${API_MOVIES}?userId=${currentUser.id}&id=${movieId}`, {
+    const res = await fetch(`${API_MOVIES}?id=${movieId}`, {
       method: "DELETE",
     });
+    if (res.status === 401) {
+      handleSessionExpired();
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    setDbStatus("online", "SQLite sincronizado");
+    setDbStatus("online", "Sincronizado");
   } catch (err) {
-    console.warn("Erro ao remover do SQLite:", err);
+    console.warn("Erro ao remover no servidor:", err);
     setDbStatus("offline", "Atualizado no cache");
   }
 }
@@ -533,14 +570,19 @@ async function resetAll() {
   updateProgress();
   showToast("Progresso resetado!");
 
-  setDbStatus("syncing", "Limpando no SQLite...");
+  setDbStatus("syncing", "Limpando...");
   try {
-    await fetch(`${API_MOVIES}?userId=${currentUser.id}&action=reset`, {
+    const res = await fetch(`${API_MOVIES}?action=reset`, {
       method: "DELETE",
     });
-    setDbStatus("online", "SQLite limpo");
+    if (res.status === 401) {
+      handleSessionExpired();
+      return;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    setDbStatus("online", "Progresso limpo");
   } catch (err) {
-    console.warn("Erro ao limpar no SQLite:", err);
+    console.warn("Erro ao limpar no servidor:", err);
     setDbStatus("offline", "Cache limpo");
   }
 }

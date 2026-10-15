@@ -1,6 +1,14 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+
+// Variáveis do banco (DATABASE_URL) vindas de "vercel env pull .env.local --yes"
+try {
+  process.loadEnvFile(path.join(__dirname, '.env.local'));
+} catch {
+  console.warn('Aviso: .env.local não encontrado; usando variáveis do ambiente.');
+}
+
 const moviesHandler = require('./api/movies');
 const authHandler = require('./api/auth');
 
@@ -114,7 +122,7 @@ function serveFile(filePath, res) {
 server.listen(PORT, () => {
   console.log(`\n==================================================`);
   console.log(`🚀 Servidor Marvel Doomsday rodando em: http://localhost:${PORT}`);
-  console.log(`💾 Banco de dados SQLite multi-usuário ativo: marvel.db`);
+  console.log(`💾 Banco de dados: ${process.env.DATABASE_URL ? 'Postgres (Neon)' : 'DATABASE_URL ausente!'}`);
   console.log(`👤 Endpoints: /api/auth e /api/movies`);
   console.log(`==================================================\n`);
 });

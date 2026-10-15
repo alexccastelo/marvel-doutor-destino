@@ -1,4 +1,5 @@
-const { getDatabase } = require('./db');
+const { getSql } = require('./_lib/db');
+const { createSession, getSessionUser, destroySession } = require('./_lib/session');
 
 function cleanPhone(phone) {
   if (!phone) return '';
@@ -11,41 +12,25 @@ function cleanEmail(email) {
 }
 
 module.exports = async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
+  // A app é servida na mesma origem: sem cabeçalhos CORS de propósito.
   try {
-    const db = getDatabase();
+    const sql = getSql();
     const url = new URL(req.url, 'http://localhost');
     const queryAction = url.searchParams.get('action');
 
-    // GET /api/auth?id=X — Verificar sessão de usuário
+    // GET /api/auth — Usuário da sessão atual (cookie)
     if (req.method === 'GET') {
-      const id = url.searchParams.get('id');
-      if (!id) {
-        return res.status(400).json({ success: false, error: 'ID do usuário não informado.' });
-      }
-
-      const user = db.prepare('SELECT id, name, email, whatsapp, created_at FROM users WHERE id = ?').get(Number(id));
+      const user = await getSessionUser(req);
       if (!user) {
-        return res.status(404).json({ success: false, error: 'Usuário não encontrado.' });
+        return res.status(401).json({ success: false, error: 'Sessão inválida ou expirada.' });
       }
+      return res.status(200).json({ success: true, user });
+    }
 
-      return res.status(200).json({
-        success: true,
-        user
-      });
+    // DELETE /api/auth — Logout
+    if (req.method === 'DELETE') {
+      await destroySession(req, res);
+      return res.status(200).json({ success: true, message: 'Sessão encerrada.' });
     }
 
     // POST /api/auth — Cadastro ou Login
@@ -58,7 +43,7 @@ module.exports = async function handler(req, res) {
 
       // --- 1. CADASTRO ---
       if (action === 'register') {
-        const name = (body.name || '').trim();
+        const name = String(body.name || '').trim().slice(0, 100);
 
         if (!name || name.length < 2) {
           return res.status(400).json({
@@ -67,23 +52,29 @@ module.exports = async function handler(req, res) {
           });
         }
 
-        if (!email || !email.includes('@') || !email.includes('.')) {
+        if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           return res.status(400).json({
             success: false,
             error: 'Por favor, informe um endereço de e-mail válido.'
           });
         }
 
-        if (!whatsapp || whatsapp.length < 8) {
+        if (!whatsapp || whatsapp.length < 10 || whatsapp.length > 13) {
           return res.status(400).json({
             success: false,
             error: 'Por favor, informe um número de WhatsApp válido com DDD.'
           });
         }
 
-        // Verifica se já existe um usuário com este e-mail
-        const existing = db.prepare('SELECT id, name, email, whatsapp FROM users WHERE email = ?').get(email);
-        if (existing) {
+        // Insere o novo usuário; se o e-mail já existir, nada é inserido
+        const inserted = await sql`
+          INSERT INTO users (name, email, whatsapp)
+          VALUES (${name}, ${email}, ${whatsapp})
+          ON CONFLICT (email) DO NOTHING
+          RETURNING id, name, email, whatsapp
+        `;
+
+        if (inserted.length === 0) {
           return res.status(409).json({
             success: false,
             code: 'EMAIL_EXISTS',
@@ -91,18 +82,8 @@ module.exports = async function handler(req, res) {
           });
         }
 
-        // Insere o novo usuário
-        const insertStmt = db.prepare(`
-          INSERT INTO users (name, email, whatsapp)
-          VALUES (?, ?, ?)
-        `);
-        const result = insertStmt.run(name, email, whatsapp);
-        const newUser = {
-          id: Number(result.lastInsertRowid),
-          name,
-          email,
-          whatsapp
-        };
+        const newUser = inserted[0];
+        await createSession(res, newUser.id);
 
         return res.status(201).json({
           success: true,
@@ -127,7 +108,8 @@ module.exports = async function handler(req, res) {
           });
         }
 
-        const user = db.prepare('SELECT id, name, email, whatsapp FROM users WHERE email = ?').get(email);
+        const rows = await sql`SELECT id, name, email, whatsapp FROM users WHERE email = ${email}`;
+        const user = rows[0];
         if (!user) {
           return res.status(404).json({
             success: false,
@@ -137,8 +119,7 @@ module.exports = async function handler(req, res) {
         }
 
         // Compara o número de WhatsApp limpo
-        const dbPhone = cleanPhone(user.whatsapp);
-        if (dbPhone !== whatsapp) {
+        if (cleanPhone(user.whatsapp) !== whatsapp) {
           return res.status(401).json({
             success: false,
             code: 'INVALID_WHATSAPP',
@@ -146,21 +127,18 @@ module.exports = async function handler(req, res) {
           });
         }
 
+        await createSession(res, user.id);
+
         return res.status(200).json({
           success: true,
           message: `Bem-vindo de volta, ${user.name}!`,
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            whatsapp: user.whatsapp
-          }
+          user
         });
       }
 
       return res.status(400).json({
         success: false,
-        error: `Ação "${action}" desconhecida.`
+        error: 'Ação desconhecida.'
       });
     }
 

@@ -4,9 +4,9 @@ Checklist das 15 produções essenciais (14 filmes e 1 série) para assistir ant
 **Vingadores: Doutor Destino** (*Avengers: Doomsday*), em 17/12/2026. Funcionalidades:
 
 - contagem regressiva até a estreia (00:00, horário de Brasília);
-- cadastro e login simples, sem senha (nome, e-mail e WhatsApp);
+- cadastro e login simples, sem senha (nome, e-mail e WhatsApp), com sessão por cookie;
 - marcação de "assistido" com data editável e ordem em que cada título foi visto;
-- progresso salvo no servidor (SQLite) e em cache no `localStorage`.
+- progresso salvo no Postgres (Neon) e em cache no `localStorage`.
 
 A lista oficial está em [ListadefilmeseseriesparaVingadoresDoomsday.md](ListadefilmeseseriesparaVingadoresDoomsday.md).
 
@@ -14,56 +14,79 @@ A lista oficial está em [ListadefilmeseseriesparaVingadoresDoomsday.md](Listade
 
 - **Frontend:** HTML, CSS e JavaScript puros em `public/`, sem framework e sem etapa de build.
 - **Backend:** handlers Node no formato de Vercel Functions em `api/`.
-- **Banco:** SQLite via [`better-sqlite3`](https://github.com/WiseLibs/better-sqlite3).
+- **Banco:** Postgres no [Neon](https://neon.tech), provisionado pelo Marketplace da Vercel
+  (recurso `marvel-doutor-destino-db`), acessado com `@neondatabase/serverless`.
 
 ## Estrutura
 
 ```
-public/            Site estático (index.html, app.js, style.css, assets/)
-api/db.js          Conexão SQLite e criação do esquema
-api/auth.js        POST /api/auth (register | login), GET /api/auth?id=
-api/movies.js      GET/POST/DELETE /api/movies (progresso do usuário)
-server.js          Servidor HTTP local: serve public/ e roteia /api/*
-selos/             Kit original dos selos "Desenvolvido por Nexum ID" (não publicado)
-vercel.json        Configuração de deploy (diretório public/, headers e cache)
+public/              Site estático (index.html, app.js, style.css, assets/)
+api/auth.js          Cadastro, login, logout e usuário da sessão
+api/movies.js        GET/POST/DELETE /api/movies (progresso do usuário logado)
+api/_lib/db.js       Conexão com o Neon e definição do esquema
+api/_lib/session.js  Criação, leitura e remoção de sessões (cookie httpOnly)
+scripts/migrate.js   Aplica o esquema no banco (npm run db:migrate)
+server.js            Servidor HTTP local: serve public/ e roteia /api/*
+selos/               Kit original dos selos "Desenvolvido por Nexum ID" (não publicado)
+vercel.json          Configuração de deploy (diretório public/, headers e cache)
 ```
+
+Arquivos em `api/_lib/` começam com `_` para que a Vercel não os publique como funções.
 
 ## Rodando localmente
 
-Requer Node.js 22 ou superior (exigência do `better-sqlite3` 13).
+Requer Node.js 22 ou superior e a [Vercel CLI](https://vercel.com/docs/cli) logada no time do
+projeto.
 
 ```bash
 npm install
+vercel link --project marvel-doutor-destino
+vercel env pull .env.local --yes
+npm run db:migrate
 npm run dev
 ```
 
-O app sobe em http://localhost:3000 (use a variável `PORT` para trocar a porta). O banco
-`marvel.db` é criado no diretório onde o servidor é iniciado e fica fora do Git.
+O app sobe em http://localhost:3000 (use a variável `PORT` para trocar a porta). O `server.js` e o
+`scripts/migrate.js` leem o `DATABASE_URL` do `.env.local`, que fica fora do Git.
+
+> **Atenção:** o ambiente `development` usa o mesmo banco da produção. Dados criados localmente
+> aparecem em produção; apague-os depois de testar.
+
+## Sessão e autenticação
+
+- Login e cadastro criam uma sessão: um token aleatório de 32 bytes vai para o cookie
+  `md_session` (`HttpOnly`, `SameSite=Lax`, `Secure` na Vercel, validade de 30 dias), e só o
+  hash SHA-256 do token fica na tabela `sessions`.
+- As rotas de progresso identificam o usuário **apenas** pela sessão. Qualquer `userId` enviado
+  pelo cliente é ignorado.
+- O logout apaga a sessão no banco e expira o cookie.
+- A API não envia cabeçalhos CORS: ela só é usada pela própria página, na mesma origem.
 
 ## API
 
 | Método | Rota | Descrição |
 |---|---|---|
-| `POST` | `/api/auth` | `{ action: "register", name, email, whatsapp }` ou `{ action: "login", email, whatsapp }` |
-| `GET` | `/api/auth?id=` | Dados do usuário |
-| `GET` | `/api/movies?userId=` | Filmes assistidos (`data`: id → data, `orders`: id → ordem) |
-| `POST` | `/api/movies` | `{ userId, id, watched_date: "AAAA-MM-DD", watched_order? }` |
-| `DELETE` | `/api/movies?userId=&id=` | Desmarca um filme e renumera a ordem dos demais |
-| `DELETE` | `/api/movies?userId=&action=reset` | Apaga todo o progresso do usuário |
+| `POST` | `/api/auth` | `{ action: "register", name, email, whatsapp }` ou `{ action: "login", email, whatsapp }`. Cria a sessão. |
+| `GET` | `/api/auth` | Usuário da sessão atual (401 sem sessão válida) |
+| `DELETE` | `/api/auth` | Logout |
+| `GET` | `/api/movies` | Filmes assistidos (`data`: id → data, `orders`: id → ordem) |
+| `POST` | `/api/movies` | `{ id, watched_date: "AAAA-MM-DD", watched_order? }` |
+| `DELETE` | `/api/movies?id=` | Desmarca um filme e renumera a ordem dos demais |
+| `DELETE` | `/api/movies?action=reset` | Apaga todo o progresso do usuário |
 
-O `id` do filme precisa ser um inteiro de 1 a 15. Se a lista `MOVIES` em `public/app.js` mudar,
-atualize também `TOTAL_MOVIES` em `api/movies.js`.
+Todas as rotas de `/api/movies` exigem sessão válida e retornam 401 sem ela. O `id` do filme
+precisa ser um inteiro de 1 a 15. Se a lista `MOVIES` em `public/app.js` mudar, atualize também
+`TOTAL_MOVIES` em `api/movies.js` e o `CHECK` da tabela em `api/_lib/db.js`.
 
 ## Deploy
 
 O deploy é feito na Vercel: `public/` é servido como site estático e cada arquivo em `api/` vira
-uma função.
+uma função. O `DATABASE_URL` já está configurado em todos os ambientes pela integração com o
+Neon. Se o esquema mudar, rode `npm run db:migrate` antes do deploy.
 
 ## Limitações conhecidas
 
-- **Persistência na Vercel:** o SQLite é gravado em `/tmp`, que é efêmero e separado por
-  instância. Os dados se perdem em cold starts e deploys. É preciso migrar para um banco hospedado.
-- **Autenticação:** não há sessão no servidor. O `userId` é enviado pelo próprio cliente, então
-  qualquer pessoa pode ler ou alterar o progresso de outro usuário, e `GET /api/auth?id=` expõe os
-  dados pessoais de qualquer conta.
+- **Login fraco:** basta saber o e-mail e o WhatsApp de alguém para entrar na conta dessa pessoa.
+  Uma melhoria possível é enviar um código de verificação por e-mail.
+- **Sem limite de tentativas:** não há rate limiting no login.
 - Não há testes automatizados.
