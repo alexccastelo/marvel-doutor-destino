@@ -172,8 +172,7 @@ module.exports = async function handler(req, res) {
     console.error('Erro na rota de autenticação:', error);
     return res.status(500).json({
       success: false,
-      error: 'Erro no servidor de autenticação SQLite.',
-      details: error.message
+      error: 'Erro no servidor de autenticação.'
     });
   }
 };

@@ -98,7 +98,7 @@ async function executeHandler(handler, req, res) {
     console.error('Erro no handler:', err);
     res.statusCode = 500;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ success: false, error: err.message }));
+    res.end(JSON.stringify({ success: false, error: 'Erro interno no servidor.' }));
   }
 }
 

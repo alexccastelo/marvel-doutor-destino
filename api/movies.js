@@ -1,5 +1,20 @@
 const { getDatabase } = require('./db');
 
+// Deve acompanhar o tamanho da lista MOVIES em public/app.js
+const TOTAL_MOVIES = 15;
+
+function parseMovieId(value) {
+  const id = Number(value);
+  return Number.isInteger(id) && id >= 1 && id <= TOTAL_MOVIES ? id : null;
+}
+
+// Aceita apenas datas reais no formato YYYY-MM-DD
+function isValidISODate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -63,9 +78,9 @@ module.exports = async function handler(req, res) {
     // POST: Inserir ou atualizar a data assistida e ordem de visualização
     if (req.method === 'POST') {
       const body = req.body || {};
-      const movieId = Number(body.id || body.movieId || body.movie_id);
+      const movieId = parseMovieId(body.id || body.movieId || body.movie_id);
       const watchedDate = body.watched_date || body.watchedDate;
-      const notes = body.notes || null;
+      const notes = body.notes ? String(body.notes).slice(0, 500) : null;
 
       if (!userId) {
         return res.status(401).json({
@@ -74,10 +89,29 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      if (!movieId || !watchedDate) {
+      if (!movieId) {
         return res.status(400).json({
           success: false,
-          error: 'Os campos "id" (filme) e "watched_date" são obrigatórios.'
+          error: `O campo "id" deve ser um número inteiro entre 1 e ${TOTAL_MOVIES}.`
+        });
+      }
+
+      if (!isValidISODate(watchedDate)) {
+        return res.status(400).json({
+          success: false,
+          error: 'O campo "watched_date" deve ser uma data válida no formato AAAA-MM-DD.'
+        });
+      }
+
+      if (
+        body.watched_order != null &&
+        !(Number.isInteger(Number(body.watched_order)) &&
+          Number(body.watched_order) >= 1 &&
+          Number(body.watched_order) <= TOTAL_MOVIES)
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: `O campo "watched_order" deve ser um número inteiro entre 1 e ${TOTAL_MOVIES}.`
         });
       }
 
@@ -125,7 +159,8 @@ module.exports = async function handler(req, res) {
     // DELETE: Remover um filme assistido ou resetar tudo do usuário
     if (req.method === 'DELETE') {
       const action = url.searchParams.get('action') || (req.body && req.body.action);
-      const movieId = url.searchParams.get('id') || (req.body && req.body.id);
+      const rawMovieId = url.searchParams.get('id') || (req.body && req.body.id);
+      const movieId = rawMovieId ? parseMovieId(rawMovieId) : null;
 
       if (!userId) {
         return res.status(401).json({
@@ -142,8 +177,15 @@ module.exports = async function handler(req, res) {
         });
       }
 
+      if (rawMovieId && !movieId) {
+        return res.status(400).json({
+          success: false,
+          error: `O campo "id" deve ser um número inteiro entre 1 e ${TOTAL_MOVIES}.`
+        });
+      }
+
       if (movieId) {
-        db.prepare('DELETE FROM user_watched_movies WHERE user_id = ? AND movie_id = ?').run(userId, Number(movieId));
+        db.prepare('DELETE FROM user_watched_movies WHERE user_id = ? AND movie_id = ?').run(userId, movieId);
 
         // Renumera as ordens dos filmes restantes para manter sequência 1, 2, 3...
         const remaining = db.prepare(`
@@ -180,8 +222,7 @@ module.exports = async function handler(req, res) {
     console.error('Erro na API de filmes SQLite:', error);
     return res.status(500).json({
       success: false,
-      error: 'Erro interno no banco de dados SQLite.',
-      details: error.message
+      error: 'Erro interno no servidor.'
     });
   }
 };

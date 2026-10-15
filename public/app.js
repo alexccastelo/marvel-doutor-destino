@@ -443,10 +443,10 @@ async function loadUserData(userId) {
 
     const result = await res.json();
     if (result.success && result.data) {
-      watchedMap = { ...watchedMap, ...result.data };
-      if (result.orders) {
-        watchedOrders = { ...watchedOrders, ...result.orders };
-      }
+      // O servidor é a fonte da verdade: substitui o cache local em vez de mesclar,
+      // para que filmes desmarcados em outro dispositivo não reapareçam.
+      watchedMap = { ...result.data };
+      watchedOrders = { ...(result.orders || {}) };
       saveLocalUserData(userId, { map: watchedMap, orders: watchedOrders });
       renderMovies();
       updateProgress();
