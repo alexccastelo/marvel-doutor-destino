@@ -1,0 +1,10 @@
+{
+  "name": "marvel-doutor-destino-checklist",
+  "version": "1.0.0",
+  "description": "Checklist dos 15 filmes e séries essenciais para Vingadores: Doutor Destino",
+  "private": true,
+  "scripts": {
+    "dev": "npx -y http-server public -p 3000 -c-1",
+    "preview": "npx -y http-server public -p 8080 -c-1"
+  }
+}
