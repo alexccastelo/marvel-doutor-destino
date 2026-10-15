@@ -93,9 +93,9 @@ incremente o `?v=` nos links em `public/doomsday/index.html` para que todos rece
 
 | URL | Comportamento |
 |---|---|
-| https://nexum.id/doomsday | URL oficial da app |
-| https://nexum.id/ | 404: reservado para o futuro site institucional da Nexum |
-| https://www.nexum.id/* | Redireciona (308) para `nexum.id` mantendo o caminho (configuração de domínio do projeto) |
+| https://nexum.id/doomsday | URL oficial da app, servida por proxy pelo site institucional |
+| https://nexum.id/ | Site institucional da Nexum (projeto `nexum-site-institucional`) |
+| https://www.nexum.id/* | Redireciona (308) para `nexum.id` mantendo o caminho (configuração de domínio do site institucional) |
 | https://marvel-doutor-destino.vercel.app/ | App na raiz (rewrite para `/doomsday`); `/doomsday` também funciona |
 
 Os arquivos estáticos ficam em `public/doomsday/`, então a raiz do projeto não tem conteúdo. O
@@ -104,9 +104,12 @@ Os arquivos estáticos ficam em `public/doomsday/`, então a raiz do projeto nã
 referencia todos os assets e a API com o prefixo absoluto `/doomsday/...`; ao criar novos links,
 use sempre esse prefixo.
 
-Quando o site institucional for publicado, o domínio `nexum.id` deve sair deste projeto e ir
-para o projeto do site, que repassa `/doomsday` e `/doomsday/:path*` para
-`https://marvel-doutor-destino.vercel.app/doomsday/...` com um rewrite externo.
+Os domínios `nexum.id` e `www.nexum.id` pertencem ao projeto `nexum-site-institucional`
+(repositório `alexccastelo/nexum-site-institucional`). O `vercel.json` dele repassa `/doomsday` e
+`/doomsday/:path*` para `https://marvel-doutor-destino.vercel.app/doomsday/...` com um rewrite
+externo. O navegador só fala com `nexum.id`, então o cookie de sessão e as chamadas à API
+funcionam através do proxy. Este projeto não precisa de nenhum domínio próprio além do
+`.vercel.app`, que precisa continuar público, sem proteção de deploy.
 
 ## Limitações conhecidas
 
