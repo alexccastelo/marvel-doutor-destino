@@ -31,12 +31,19 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   let pathname = parsedUrl.pathname;
 
-  // Espelha os rewrites do vercel.json: /doomsday/api/* vai para /api/*,
-  // e a raiz mostra a app (fora do domínio nexum.id, como no localhost)
-  if (pathname.startsWith('/doomsday/api/')) {
-    pathname = pathname.slice('/doomsday'.length);
+  // Espelha o vercel.json: /doomsday (caminho antigo) redireciona para /drdestino
+  if (pathname === '/doomsday' || pathname.startsWith('/doomsday/')) {
+    res.statusCode = 308;
+    res.setHeader('Location', '/drdestino' + pathname.slice('/doomsday'.length) + parsedUrl.search);
+    res.end();
+    return;
+  }
+
+  // /drdestino/api/* vai para /api/*, e a raiz mostra a app
+  if (pathname.startsWith('/drdestino/api/')) {
+    pathname = pathname.slice('/drdestino'.length);
   } else if (pathname === '/') {
-    pathname = '/doomsday';
+    pathname = '/drdestino';
   }
 
   // Rotas de API
@@ -77,7 +84,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Diretórios servem o próprio index.html (ex.: /doomsday)
+  // Diretórios servem o próprio index.html (ex.: /drdestino)
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
     filePath = path.join(filePath, 'index.html');
   }

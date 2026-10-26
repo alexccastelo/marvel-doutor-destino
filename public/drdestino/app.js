@@ -124,8 +124,8 @@ const MOVIES = [
 
 const USER_SESSION_KEY = "marvel_doomsday_user";
 const STORAGE_PREFIX = "marvel_user_data_";
-const API_MOVIES = "/doomsday/api/movies";
-const API_AUTH = "/doomsday/api/auth";
+const API_MOVIES = "/drdestino/api/movies";
+const API_AUTH = "/drdestino/api/auth";
 
 // Data de Estreia: 17 de dezembro de 2026 às 00:00 (Horário de Brasília UTC-3)
 const TARGET_RELEASE_DATE = new Date("2026-12-17T00:00:00-03:00").getTime();

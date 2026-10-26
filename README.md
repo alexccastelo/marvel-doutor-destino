@@ -12,7 +12,7 @@ A lista oficial está em [ListadefilmeseseriesparaVingadoresDoomsday.md](Listade
 
 ## Stack
 
-- **Frontend:** HTML, CSS e JavaScript puros em `public/doomsday/`, sem framework e sem etapa de build.
+- **Frontend:** HTML, CSS e JavaScript puros em `public/drdestino/`, sem framework e sem etapa de build.
 - **Backend:** handlers Node no formato de Vercel Functions em `api/`.
 - **Banco:** Postgres no [Neon](https://neon.tech), provisionado pelo Marketplace da Vercel
   (recurso `marvel-doutor-destino-db`), acessado com `@neondatabase/serverless`.
@@ -20,7 +20,7 @@ A lista oficial está em [ListadefilmeseseriesparaVingadoresDoomsday.md](Listade
 ## Estrutura
 
 ```
-public/doomsday/     Site estático (index.html, app.js, style.css, assets/)
+public/drdestino/     Site estático (index.html, app.js, style.css, assets/)
 api/auth.js          Cadastro, login, logout e usuário da sessão
 api/movies.js        GET/POST/DELETE /api/movies (progresso do usuário logado)
 api/_lib/db.js       Conexão com o Neon e definição do esquema
@@ -29,7 +29,7 @@ scripts/migrate.js   Aplica o esquema no banco (npm run db:migrate)
 server.js            Servidor HTTP local: serve public/ e roteia /api/*
 selos/               Kit original dos selos "Desenvolvido por Nexum ID" (não publicado)
 favicon/             Kit original dos ícones da marca (não publicado); a app usa favicon.ico,
-                     nexum-192.png e nexum-180.png, copiados para public/doomsday/assets/icons/
+                     nexum-192.png e nexum-180.png, copiados para public/drdestino/assets/icons/
 vercel.json          Configuração de deploy (diretório public/, headers e cache)
 ```
 
@@ -48,7 +48,7 @@ npm run db:migrate
 npm run dev
 ```
 
-O app sobe em http://localhost:3000/doomsday (use a variável `PORT` para trocar a porta). O `server.js` e o
+O app sobe em http://localhost:3000/drdestino (use a variável `PORT` para trocar a porta). O `server.js` e o
 `scripts/migrate.js` leem o `DATABASE_URL` do `.env.local`, que fica fora do Git.
 
 > **Atenção:** o ambiente `development` usa o mesmo banco da produção. Dados criados localmente
@@ -77,7 +77,7 @@ O app sobe em http://localhost:3000/doomsday (use a variável `PORT` para trocar
 | `DELETE` | `/api/movies?action=reset` | Apaga todo o progresso do usuário |
 
 Todas as rotas de `/api/movies` exigem sessão válida e retornam 401 sem ela. O `id` do filme
-precisa ser um inteiro de 1 a 15. Se a lista `MOVIES` em `public/doomsday/app.js` mudar, atualize também
+precisa ser um inteiro de 1 a 15. Se a lista `MOVIES` em `public/drdestino/app.js` mudar, atualize também
 `TOTAL_MOVIES` em `api/movies.js` e o `CHECK` da tabela em `api/_lib/db.js`.
 
 ## Deploy
@@ -87,27 +87,28 @@ uma função. O `DATABASE_URL` já está configurado em todos os ambientes pela 
 Neon. Se o esquema mudar, rode `npm run db:migrate` antes do deploy.
 
 O navegador guarda `app.js` e `style.css` em cache por 1 dia. Ao alterar esses arquivos,
-incremente o `?v=` nos links em `public/doomsday/index.html` para que todos recebam a versão nova.
+incremente o `?v=` nos links em `public/drdestino/index.html` para que todos recebam a versão nova.
 
-### URLs e o prefixo `/doomsday`
+### URLs e o prefixo `/drdestino`
 
 | URL | Comportamento |
 |---|---|
-| https://nexum.id/doomsday | URL oficial da app, servida por proxy pelo site institucional |
+| https://nexum.id/drdestino | URL oficial da app, servida por proxy pelo site institucional |
+| https://nexum.id/doomsday | Endereço antigo: redireciona (308) para `/drdestino`, mantendo o resto do caminho |
 | https://nexum.id/ | Site institucional da Nexum (projeto `nexum-site-institucional`) |
 | https://www.nexum.id/* | Redireciona (308) para `nexum.id` mantendo o caminho (configuração de domínio do site institucional) |
-| https://marvel-doutor-destino.vercel.app/ | App na raiz (rewrite para `/doomsday`); `/doomsday` também funciona |
+| https://marvel-doutor-destino.vercel.app/ | App na raiz (rewrite para `/drdestino`); `/drdestino` também funciona |
 
-Os arquivos estáticos ficam em `public/doomsday/`, então a raiz do projeto não tem conteúdo. O
-`vercel.json` reescreve `/doomsday/api/:path*` para as funções em `/api/*`, e reescreve `/` para
-`/doomsday` em qualquer host **exceto** `nexum.id` (o `server.js` faz o mesmo localmente). A página
-referencia todos os assets e a API com o prefixo absoluto `/doomsday/...`; ao criar novos links,
-use sempre esse prefixo.
+Os arquivos estáticos ficam em `public/drdestino/`, então a raiz do projeto não tem conteúdo. O
+`vercel.json` reescreve `/drdestino/api/:path*` para as funções em `/api/*`, reescreve `/` para
+`/drdestino` e redireciona o caminho antigo `/doomsday/*` para `/drdestino/*` (o `server.js` faz o
+mesmo localmente). A página referencia todos os assets e a API com o prefixo absoluto
+`/drdestino/...`; ao criar novos links, use sempre esse prefixo.
 
 Os domínios `nexum.id` e `www.nexum.id` pertencem ao projeto `nexum-site-institucional`
-(repositório `alexccastelo/nexum-site-institucional`). O `vercel.json` dele repassa `/doomsday` e
-`/doomsday/:path*` para `https://marvel-doutor-destino.vercel.app/doomsday/...` com um rewrite
-externo. O navegador só fala com `nexum.id`, então o cookie de sessão e as chamadas à API
+(repositório `alexccastelo/nexum-site-institucional`). O `vercel.json` dele repassa `/drdestino` e
+`/drdestino/:path*` para `https://marvel-doutor-destino.vercel.app/drdestino/...` com um rewrite
+externo e redireciona `/doomsday/*` para `/drdestino/*`. O navegador só fala com `nexum.id`, então o cookie de sessão e as chamadas à API
 funcionam através do proxy. Este projeto não precisa de nenhum domínio próprio além do
 `.vercel.app`, que precisa continuar público, sem proteção de deploy.
 

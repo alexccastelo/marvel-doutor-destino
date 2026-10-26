@@ -17,7 +17,7 @@ O **Checklist Doutor Destino** ajuda você a chegar preparado:
 
 Cadastro gratuito, sem senha: só nome, e-mail e WhatsApp.
 
-👉 **Comece sua maratona em [nexum.id/doomsday](https://nexum.id/doomsday)**
+👉 **Comece sua maratona em [nexum.id/drdestino](https://nexum.id/drdestino)**
 
 *Desenvolvido por Nexum ID.*
 
@@ -27,7 +27,7 @@ Cadastro gratuito, sem senha: só nome, e-mail e WhatsApp.
 
 A estreia de Vingadores: Doutor Destino está chegando! 🎬 Organize sua maratona com as 15
 produções essenciais indicadas pela Marvel: marque o que já assistiu, acompanhe seu progresso e
-siga a contagem regressiva para a estreia. Grátis em nexum.id/doomsday
+siga a contagem regressiva para a estreia. Grátis em nexum.id/drdestino
 
 ---
 

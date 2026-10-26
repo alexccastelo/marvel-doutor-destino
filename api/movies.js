@@ -1,7 +1,7 @@
 const { getSql } = require('./_lib/db');
 const { getSessionUser } = require('./_lib/session');
 
-// Deve acompanhar o tamanho da lista MOVIES em public/doomsday/app.js
+// Deve acompanhar o tamanho da lista MOVIES em public/drdestino/app.js
 const TOTAL_MOVIES = 15;
 
 function parseMovieId(value) {

@@ -4,13 +4,13 @@
   "outputDirectory": "public",
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/doomsday", "destination": "/drdestino", "permanent": true },
+    { "source": "/doomsday/:path*", "destination": "/drdestino/:path*", "permanent": true }
+  ],
   "rewrites": [
-    { "source": "/doomsday/api/:path*", "destination": "/api/:path*" },
-    {
-      "source": "/",
-      "missing": [{ "type": "host", "value": "nexum.id" }],
-      "destination": "/doomsday"
-    }
+    { "source": "/drdestino/api/:path*", "destination": "/api/:path*" },
+    { "source": "/", "destination": "/drdestino" }
   ],
   "headers": [
     {
@@ -22,7 +22,7 @@
       ]
     },
     {
-      "source": "/doomsday/assets/(.*)",
+      "source": "/drdestino/assets/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
