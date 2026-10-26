@@ -28,8 +28,10 @@ api/_lib/session.js  Criação, leitura e remoção de sessões (cookie httpOnly
 scripts/migrate.js   Aplica o esquema no banco (npm run db:migrate)
 server.js            Servidor HTTP local: serve public/ e roteia /api/*
 selos/               Kit original dos selos "Desenvolvido por Nexum ID" (não publicado)
-favicon/             Kit original dos ícones da marca (não publicado); a app usa favicon.ico,
-                     nexum-192.png e nexum-180.png, copiados para public/drdestino/assets/icons/
+favicon/             Kit dos ícones da marca, versão colorida com fundo branco (não publicado; ver
+                     LEIA-ME.md). A app usa favicon.svg, favicon.ico, apple-touch-icon.png e
+                     android-chrome-192.png, copiados para public/drdestino/assets/icons/ como
+                     nexum-branco.*; ao trocar o ícone, use nomes novos (cache de 1 ano)
 vercel.json          Configuração de deploy (diretório public/, headers e cache)
 ```
 
