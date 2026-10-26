@@ -58,7 +58,8 @@ async function getSessionUser(req) {
 
   const sql = getSql();
   const rows = await sql`
-    SELECT u.id, u.name, u.email, u.whatsapp
+    SELECT u.id, u.name, u.email, u.whatsapp,
+           (u.privacy_accepted_at IS NOT NULL) AS privacy_accepted, u.marketing_opt_in
     FROM sessions s
     JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ${hashToken(token)} AND s.expires_at > now()

@@ -95,7 +95,7 @@ incremente o `?v=` nos links em `public/drdestino/index.html` para que todos rec
 
 | URL | Comportamento |
 |---|---|
-| https://nexum.id/drdestino | URL oficial da app, servida por proxy pelo site institucional |
+| https://nexum.id/drdestino | URL principal da app, servida por proxy pelo site institucional |
 | https://nexum.id/doomsday | Endereço antigo: redireciona (308) para `/drdestino`, mantendo o resto do caminho |
 | https://nexum.id/ | Site institucional da Nexum (projeto `nexum-site-institucional`) |
 | https://www.nexum.id/* | Redireciona (308) para `nexum.id` mantendo o caminho (configuração de domínio do site institucional) |

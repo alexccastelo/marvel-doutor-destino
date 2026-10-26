@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
 
   <!-- Ao alterar app.js ou style.css, incremente ?v= para furar o cache de 1 dia do navegador -->
-  <link rel="stylesheet" href="/drdestino/style.css?v=6" />
+  <link rel="stylesheet" href="/drdestino/style.css?v=7" />
 </head>
 <body>
   <!-- Animated background orbs -->
@@ -56,6 +56,9 @@
             <button type="button" class="btn-user-logout" id="btnLogout" title="Sair da conta">
               Sair
             </button>
+            <button type="button" class="btn-user-delete" id="btnDeleteAccount" title="Excluir meu perfil e todo o progresso">
+              Excluir perfil
+            </button>
           </div>
         </div>
       </nav>
@@ -73,14 +76,14 @@
         <div class="hero-content">
           <div class="hero-content-main">
             <div class="hero-titles">
-              <div class="hero-badge">🎬 Lista Oficial Marvel Studios</div>
+              <div class="hero-badge">🎬 Guia de fã · não oficial</div>
               <h1>Vingadores: Doutor Destino</h1>
               <p class="hero-subtitle">
                 15 produções essenciais — estreia em <span class="hero-date">17 de dezembro de 2026 às 00:00</span>
               </p>
             </div>
 
-            <!-- Sinopse Oficial -->
+            <!-- Sinopse -->
             <section class="hero-synopsis" aria-label="Sinopse de Vingadores: Doutor Destino">
               <div class="synopsis-header">
                 <span class="synopsis-badge">📖 Sinopse</span>
@@ -225,6 +228,7 @@
             </p>
             <p class="footer-disclaimer">
               Guia cronológico e checklist de filmes para <em>Vingadores: Doutor Destino (Avengers: Doomsday)</em>. Produção baseada nas obras da Marvel Studios. Todos os personagens, títulos e marcas registradas pertencem à Marvel Studios / The Walt Disney Company.
+              <strong>Projeto independente de fã, sem vínculo, patrocínio ou aprovação da Marvel Studios ou da The Walt Disney Company.</strong>
             </p>
           </div>
         </div>
@@ -247,22 +251,18 @@
         </div>
 
         <p class="auth-modal-desc" id="authModalDesc">
-          Acesse com seu e-mail e WhatsApp para acompanhar seu checklist pessoal.
+          Informe seu e-mail e enviaremos um código de acesso.
         </p>
 
-        <!-- Formulário de Login -->
+        <!-- Formulário de Login: só o e-mail; o acesso é confirmado por código -->
         <form id="formLogin" class="auth-form-body">
           <div class="auth-field">
             <label for="inputLoginEmail">E-mail</label>
             <input type="email" id="inputLoginEmail" placeholder="exemplo@email.com" required autocomplete="email" />
           </div>
-          <div class="auth-field">
-            <label for="inputLoginWhatsapp">WhatsApp (com DDD)</label>
-            <input type="tel" id="inputLoginWhatsapp" placeholder="(11) 98765-4321" required autocomplete="tel" />
-          </div>
           <div class="auth-error" id="loginErrorBox" style="display: none;"></div>
           <button type="submit" class="btn-auth-submit" id="btnSubmitLogin">
-            Entrar no Checklist
+            Enviar código de acesso
           </button>
           <div class="auth-switch-link">
             Novo por aqui? <button type="button" class="link-btn" id="linkToRegister">Crie seu perfil em segundos</button>
@@ -284,14 +284,64 @@
             <input type="tel" id="inputRegWhatsapp" placeholder="(11) 98765-4321" required autocomplete="tel" />
           </div>
           <div class="auth-note">
-            🛡️ <strong>Sem senha!</strong> Você fará login no futuro apenas informando seu E-mail e WhatsApp.
+            🛡️ <strong>Sem senha.</strong> Para entrar, a gente manda um código para o seu e-mail.
           </div>
+          <label class="consent-check">
+            <input type="checkbox" id="inputRegPrivacy" />
+            <span>Ao me cadastrar, concordo com o uso do meu nome, e-mail e WhatsApp para acessar e salvar meu checklist, conforme a <a href="https://nexum.id/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.</span>
+          </label>
+          <label class="consent-check">
+            <input type="checkbox" id="inputRegMarketing" />
+            <span>Quero receber novidades da Nexum.iD por e-mail ou WhatsApp. <em>(opcional)</em></span>
+          </label>
           <div class="auth-error" id="regErrorBox" style="display: none;"></div>
-          <button type="submit" class="btn-auth-submit" id="btnSubmitRegister">
+          <button type="submit" class="btn-auth-submit" id="btnSubmitRegister" disabled>
             Cadastrar e Começar
           </button>
           <div class="auth-switch-link">
             Já tem um perfil? <button type="button" class="link-btn" id="linkToLogin">Entrar na minha conta</button>
+          </div>
+        </form>
+
+        <!-- Etapa do código de acesso (login e cadastro) -->
+        <form id="formCode" class="auth-form-body" style="display: none;">
+          <p class="auth-code-info" id="codeInfo"></p>
+          <div class="auth-field">
+            <label for="inputCode">Código de acesso (6 dígitos)</label>
+            <input type="text" id="inputCode" class="code-input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                   placeholder="000000" required autocomplete="one-time-code" />
+          </div>
+          <div class="auth-error" id="codeErrorBox" style="display: none;"></div>
+          <button type="submit" class="btn-auth-submit" id="btnSubmitCode">Entrar no Checklist</button>
+          <div class="auth-switch-link">
+            <button type="button" class="link-btn" id="btnResendCode">Reenviar código</button>
+            ·
+            <button type="button" class="link-btn" id="btnChangeEmail">Usar outro e-mail</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <!-- Aviso de privacidade para quem se cadastrou antes do consentimento (exibido uma vez) -->
+    <dialog class="auth-modal" id="privacyModal">
+      <div class="auth-modal-content">
+        <h3 class="privacy-title">Atualizamos nossa privacidade</h3>
+        <p class="auth-modal-desc">
+          Para continuar usando o checklist, confirme como seus dados são usados.
+        </p>
+        <form id="formPrivacy" class="auth-form-body">
+          <label class="consent-check">
+            <input type="checkbox" id="inputPrivacyAccept" />
+            <span>Concordo com o uso do meu nome, e-mail e WhatsApp para acessar e salvar meu checklist, conforme a <a href="https://nexum.id/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.</span>
+          </label>
+          <label class="consent-check">
+            <input type="checkbox" id="inputPrivacyMarketing" />
+            <span>Quero receber novidades da Nexum.iD por e-mail ou WhatsApp. <em>(opcional)</em></span>
+          </label>
+          <div class="auth-error" id="privacyErrorBox" style="display: none;"></div>
+          <button type="submit" class="btn-auth-submit" id="btnSubmitPrivacy" disabled>Aceitar e continuar</button>
+          <div class="auth-switch-link">
+            Não concorda? <button type="button" class="link-btn" id="btnPrivacyLogout">Sair</button>
           </div>
         </form>
       </div>
@@ -322,6 +372,6 @@
     <div class="toast" id="toastNotification" role="alert" aria-live="polite"></div>
   </div>
 
-  <script src="/drdestino/app.js?v=6"></script>
+  <script src="/drdestino/app.js?v=7"></script>
 </body>
 </html>

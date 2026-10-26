@@ -1304,6 +1304,22 @@ body {
   color: #fff;
 }
 
+/* Ação destrutiva discreta: texto sublinhado, sem cara de botão principal */
+.btn-user-delete {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+
+.btn-user-delete:hover {
+  color: var(--accent-red);
+}
+
 /* ===== Modal de Autenticação ===== */
 .auth-modal {
   border: none;
@@ -1417,6 +1433,65 @@ body {
   font-size: 0.75rem;
   color: #a8e6c4;
   line-height: 1.4;
+}
+
+/* Caixas de consentimento (LGPD) */
+.consent-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.consent-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.consent-check a {
+  color: var(--text-accent);
+  font-weight: 600;
+}
+
+.consent-check em {
+  color: var(--text-muted);
+}
+
+.btn-auth-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Etapa do código de acesso */
+.auth-code-info {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.code-input {
+  font-family: var(--font-display);
+  font-size: 1.5rem !important;
+  font-weight: 800;
+  letter-spacing: 0.45em;
+  text-align: center;
+}
+
+.privacy-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
 }
 
 .auth-error {

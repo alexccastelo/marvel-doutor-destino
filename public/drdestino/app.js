@@ -156,6 +156,7 @@ const btnOpenAuthModal = document.getElementById("btnOpenAuthModal");
 const userLoggedActions = document.getElementById("userLoggedActions");
 const btnSwitchUser = document.getElementById("btnSwitchUser");
 const btnLogout = document.getElementById("btnLogout");
+const btnDeleteAccount = document.getElementById("btnDeleteAccount");
 
 // Aviso de cadastro (somente visitantes)
 const signupGate = document.getElementById("signupGate");
@@ -171,14 +172,38 @@ const formLogin = document.getElementById("formLogin");
 const formRegister = document.getElementById("formRegister");
 const authModalDesc = document.getElementById("authModalDesc");
 const inputLoginEmail = document.getElementById("inputLoginEmail");
-const inputLoginWhatsapp = document.getElementById("inputLoginWhatsapp");
 const inputRegName = document.getElementById("inputRegName");
 const inputRegEmail = document.getElementById("inputRegEmail");
 const inputRegWhatsapp = document.getElementById("inputRegWhatsapp");
+const inputRegPrivacy = document.getElementById("inputRegPrivacy");
+const inputRegMarketing = document.getElementById("inputRegMarketing");
+const btnSubmitRegister = document.getElementById("btnSubmitRegister");
 const loginErrorBox = document.getElementById("loginErrorBox");
 const regErrorBox = document.getElementById("regErrorBox");
 const linkToRegister = document.getElementById("linkToRegister");
 const linkToLogin = document.getElementById("linkToLogin");
+
+// Etapa do código de acesso
+const formCode = document.getElementById("formCode");
+const codeInfo = document.getElementById("codeInfo");
+const inputCode = document.getElementById("inputCode");
+const codeErrorBox = document.getElementById("codeErrorBox");
+const btnResendCode = document.getElementById("btnResendCode");
+const btnChangeEmail = document.getElementById("btnChangeEmail");
+const authTabs = document.querySelector(".auth-nav-tabs");
+
+// Aviso de privacidade para cadastros antigos
+const privacyModal = document.getElementById("privacyModal");
+const formPrivacy = document.getElementById("formPrivacy");
+const inputPrivacyAccept = document.getElementById("inputPrivacyAccept");
+const inputPrivacyMarketing = document.getElementById("inputPrivacyMarketing");
+const btnSubmitPrivacy = document.getElementById("btnSubmitPrivacy");
+const privacyErrorBox = document.getElementById("privacyErrorBox");
+const btnPrivacyLogout = document.getElementById("btnPrivacyLogout");
+
+// E-mail que aguarda o código e de qual aba ele veio
+let pendingEmail = null;
+let pendingTab = "login";
 
 // Elementos do Modal de Edição de Data
 const dateModal = document.getElementById("dateModal");
@@ -213,6 +238,7 @@ resetBtn.addEventListener("click", handleReset);
 btnOpenAuthModal.addEventListener("click", () => openAuthModal("login"));
 btnSwitchUser.addEventListener("click", () => openAuthModal("login"));
 btnLogout.addEventListener("click", handleLogout);
+btnDeleteAccount.addEventListener("click", handleDeleteAccount);
 btnGateRegister.addEventListener("click", () => openAuthModal("register"));
 btnGateLogin.addEventListener("click", () => openAuthModal("login"));
 
@@ -230,6 +256,28 @@ linkToLogin.addEventListener("click", (e) => {
 
 formLogin.addEventListener("submit", handleLoginSubmit);
 formRegister.addEventListener("submit", handleRegisterSubmit);
+formCode.addEventListener("submit", handleCodeSubmit);
+btnResendCode.addEventListener("click", handleResendCode);
+btnChangeEmail.addEventListener("click", () => switchAuthTab(pendingTab));
+inputCode.addEventListener("input", () => {
+  inputCode.value = inputCode.value.replace(/\D/g, "").slice(0, 6);
+});
+
+// O botão de cadastro só fica ativo com o aceite marcado
+inputRegPrivacy.addEventListener("change", () => {
+  btnSubmitRegister.disabled = !inputRegPrivacy.checked;
+});
+
+formPrivacy.addEventListener("submit", handlePrivacySubmit);
+inputPrivacyAccept.addEventListener("change", () => {
+  btnSubmitPrivacy.disabled = !inputPrivacyAccept.checked;
+});
+btnPrivacyLogout.addEventListener("click", () => {
+  closeDialog(privacyModal);
+  handleLogout();
+});
+// O aviso de privacidade não fecha com Esc: a pessoa aceita ou sai
+privacyModal.addEventListener("cancel", (e) => e.preventDefault());
 
 dateModalClose.addEventListener("click", closeDateModal);
 dateModalCancel.addEventListener("click", closeDateModal);
@@ -290,29 +338,41 @@ function updateUserUI() {
   signupGate.hidden = !!currentUser;
 }
 
-function openAuthModal(defaultTab = "login") {
-  loginErrorBox.style.display = "none";
-  regErrorBox.style.display = "none";
-  switchAuthTab(defaultTab);
-
-  if (typeof authModal.showModal === "function") {
-    authModal.showModal();
+function openDialog(dialog) {
+  if (typeof dialog.showModal === "function") {
+    if (!dialog.open) dialog.showModal();
   } else {
-    authModal.setAttribute("open", "true");
+    dialog.setAttribute("open", "true");
   }
+}
+
+function closeDialog(dialog) {
+  if (typeof dialog.close === "function") {
+    dialog.close();
+  } else {
+    dialog.removeAttribute("open");
+  }
+}
+
+function openAuthModal(defaultTab = "login") {
+  switchAuthTab(defaultTab);
+  openDialog(authModal);
 }
 
 function closeAuthModal() {
-  if (typeof authModal.close === "function") {
-    authModal.close();
-  } else {
-    authModal.removeAttribute("open");
-  }
+  closeDialog(authModal);
+}
+
+function hideAuthErrors() {
+  [loginErrorBox, regErrorBox, codeErrorBox].forEach((box) => {
+    box.style.display = "none";
+  });
 }
 
 function switchAuthTab(tab) {
-  loginErrorBox.style.display = "none";
-  regErrorBox.style.display = "none";
+  hideAuthErrors();
+  authTabs.style.display = "";
+  formCode.style.display = "none";
 
   if (tab === "login") {
     tabBtnLogin.classList.add("active");
@@ -321,7 +381,7 @@ function switchAuthTab(tab) {
     tabBtnRegister.setAttribute("aria-selected", "false");
     formLogin.style.display = "flex";
     formRegister.style.display = "none";
-    authModalDesc.textContent = "Acesse com seu e-mail e WhatsApp para carregar seus filmes assistidos.";
+    authModalDesc.textContent = "Informe seu e-mail e enviaremos um código de acesso.";
     inputLoginEmail.focus();
   } else {
     tabBtnRegister.classList.add("active");
@@ -330,89 +390,210 @@ function switchAuthTab(tab) {
     tabBtnLogin.setAttribute("aria-selected", "false");
     formRegister.style.display = "flex";
     formLogin.style.display = "none";
+    btnSubmitRegister.disabled = !inputRegPrivacy.checked;
     authModalDesc.textContent = "Crie seu perfil em poucos segundos para salvar seu progresso (sem necessidade de senha).";
     inputRegName.focus();
   }
 }
 
+// Mostra a etapa do código de acesso para o e-mail informado
+function showCodeStep(email, fromTab) {
+  pendingEmail = email;
+  pendingTab = fromTab;
+  hideAuthErrors();
+  authTabs.style.display = "none";
+  formLogin.style.display = "none";
+  formRegister.style.display = "none";
+  formCode.style.display = "flex";
+  authModalDesc.textContent = "Digite o código de acesso.";
+  codeInfo.textContent = `Se ${email} estiver cadastrado, enviamos um código de 6 dígitos. Ele vale por 10 minutos. Confira também a pasta de spam.`;
+  inputCode.value = "";
+  inputCode.focus();
+}
+
+async function postAuth(payload) {
+  const res = await fetch(API_AUTH, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { res, data };
+}
+
 async function handleLoginSubmit(e) {
   e.preventDefault();
-  loginErrorBox.style.display = "none";
+  hideAuthErrors();
 
-  const email = inputLoginEmail.value.trim();
-  const whatsapp = inputLoginWhatsapp.value.trim();
-
-  if (!email || !whatsapp) {
-    showError(loginErrorBox, "Por favor, preencha o e-mail e o WhatsApp.");
+  const email = inputLoginEmail.value.trim().toLowerCase();
+  if (!email) {
+    showError(loginErrorBox, "Por favor, informe seu e-mail.");
     return;
   }
 
-  setDbStatus("syncing", "Autenticando...");
-
   try {
-    const res = await fetch(API_AUTH, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "login", email, whatsapp }),
-    });
-
-    const data = await res.json();
-
+    const { res, data } = await postAuth({ action: "request_code", email });
     if (!res.ok || !data.success) {
-      showError(loginErrorBox, data.error || "Erro ao realizar login.");
-      setDbStatus("offline", "Erro no login");
+      showError(loginErrorBox, data.error || "Não foi possível enviar o código.");
       return;
     }
-
-    saveUserSession(data.user);
-    closeAuthModal();
-    showToast(`Bem-vindo, ${data.user.name}!`);
-    await loadUserData(data.user.id);
+    showCodeStep(email, "login");
   } catch (err) {
-    console.error("Erro no login:", err);
+    console.error("Erro ao pedir código:", err);
     showError(loginErrorBox, "Erro de comunicação com o servidor.");
-    setDbStatus("offline", "Falha de conexão");
   }
 }
 
 async function handleRegisterSubmit(e) {
   e.preventDefault();
-  regErrorBox.style.display = "none";
+  hideAuthErrors();
 
   const name = inputRegName.value.trim();
-  const email = inputRegEmail.value.trim();
+  const email = inputRegEmail.value.trim().toLowerCase();
   const whatsapp = inputRegWhatsapp.value.trim();
 
   if (!name || !email || !whatsapp) {
     showError(regErrorBox, "Por favor, preencha todos os campos.");
     return;
   }
-
-  setDbStatus("syncing", "Criando perfil...");
+  if (!inputRegPrivacy.checked) {
+    showError(regErrorBox, "Para se cadastrar, é preciso aceitar a Política de Privacidade.");
+    return;
+  }
 
   try {
-    const res = await fetch(API_AUTH, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "register", name, email, whatsapp }),
+    const { res, data } = await postAuth({
+      action: "register",
+      name,
+      email,
+      whatsapp,
+      privacy_accepted: true,
+      marketing_opt_in: inputRegMarketing.checked,
     });
-
-    const data = await res.json();
-
     if (!res.ok || !data.success) {
       showError(regErrorBox, data.error || "Erro ao cadastrar.");
-      setDbStatus("offline", "Erro no cadastro");
+      return;
+    }
+    showCodeStep(email, "register");
+  } catch (err) {
+    console.error("Erro no cadastro:", err);
+    showError(regErrorBox, "Erro de comunicação com o servidor.");
+  }
+}
+
+async function handleCodeSubmit(e) {
+  e.preventDefault();
+  hideAuthErrors();
+
+  const code = inputCode.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    showError(codeErrorBox, "Digite os 6 dígitos do código.");
+    return;
+  }
+
+  setDbStatus("syncing", "Autenticando...");
+  try {
+    const { res, data } = await postAuth({ action: "verify_code", email: pendingEmail, code });
+    if (!res.ok || !data.success) {
+      showError(codeErrorBox, data.error || "Código inválido ou expirado.");
+      setDbStatus("offline", "Código não confirmado");
       return;
     }
 
     saveUserSession(data.user);
     closeAuthModal();
-    showToast(`Perfil criado com sucesso! Olá, ${data.user.name}.`);
+    pendingEmail = null;
+    showToast(`Bem-vindo, ${data.user.name}!`);
+    if (!data.user.privacy_accepted) openPrivacyModal();
     await loadUserData(data.user.id);
   } catch (err) {
-    console.error("Erro no cadastro:", err);
-    showError(regErrorBox, "Erro de comunicação com o servidor.");
+    console.error("Erro ao conferir código:", err);
+    showError(codeErrorBox, "Erro de comunicação com o servidor.");
     setDbStatus("offline", "Falha de conexão");
+  }
+}
+
+async function handleResendCode() {
+  if (!pendingEmail) return;
+  hideAuthErrors();
+  try {
+    const { res, data } = await postAuth({ action: "request_code", email: pendingEmail });
+    if (!res.ok || !data.success) {
+      showError(codeErrorBox, data.error || "Não foi possível reenviar o código.");
+      return;
+    }
+    showToast("Se o e-mail estiver cadastrado, enviamos um novo código.");
+    inputCode.value = "";
+    inputCode.focus();
+  } catch (err) {
+    console.error("Erro ao reenviar código:", err);
+    showError(codeErrorBox, "Erro de comunicação com o servidor.");
+  }
+}
+
+// ===== Privacidade (LGPD) =====
+
+function openPrivacyModal() {
+  inputPrivacyAccept.checked = false;
+  inputPrivacyMarketing.checked = false;
+  btnSubmitPrivacy.disabled = true;
+  privacyErrorBox.style.display = "none";
+  openDialog(privacyModal);
+}
+
+async function handlePrivacySubmit(e) {
+  e.preventDefault();
+  if (!inputPrivacyAccept.checked) return;
+
+  try {
+    const { res, data } = await postAuth({
+      action: "accept_privacy",
+      privacy_accepted: true,
+      marketing_opt_in: inputPrivacyMarketing.checked,
+    });
+    if (res.status === 401) {
+      closeDialog(privacyModal);
+      handleSessionExpired();
+      return;
+    }
+    if (!res.ok || !data.success) {
+      showError(privacyErrorBox, data.error || "Não foi possível registrar o aceite.");
+      return;
+    }
+    saveUserSession(data.user);
+    closeDialog(privacyModal);
+    showToast("Obrigado! Preferências salvas.");
+  } catch (err) {
+    console.error("Erro ao registrar aceite:", err);
+    showError(privacyErrorBox, "Erro de comunicação com o servidor.");
+  }
+}
+
+async function handleDeleteAccount() {
+  if (!currentUser) return;
+  const ok = confirm(
+    `Excluir o perfil de ${currentUser.name}?\n\n` +
+      "Seus dados (nome, e-mail, WhatsApp) e todo o progresso do checklist serão apagados de forma permanente."
+  );
+  if (!ok) return;
+
+  try {
+    const { res, data } = await postAuth({ action: "delete_account" });
+    if (!res.ok || !data.success) {
+      showToast(data.error || "Não foi possível excluir o perfil.");
+      return;
+    }
+    try {
+      localStorage.removeItem(`${STORAGE_PREFIX}${currentUser.id}`);
+    } catch {
+      // Sem acesso ao localStorage: nada a limpar
+    }
+    saveUserSession(null);
+    showVisitorMode("Perfil excluído");
+    showToast("Seu perfil e todo o progresso foram excluídos.");
+  } catch (err) {
+    console.error("Erro ao excluir perfil:", err);
+    showToast("Erro de comunicação com o servidor.");
   }
 }
 
@@ -436,7 +617,11 @@ async function verifySession() {
       return;
     }
     const data = await res.json();
-    if (data.success && data.user) saveUserSession(data.user);
+    if (data.success && data.user) {
+      saveUserSession(data.user);
+      // Cadastro anterior ao aviso de privacidade: mostra o aviso uma vez
+      if (!data.user.privacy_accepted) openPrivacyModal();
+    }
   } catch (err) {
     console.warn("Não foi possível verificar a sessão:", err);
   }
@@ -921,7 +1106,7 @@ function initCountdown() {
 // ===== 6. Utilitários e Máscaras =====
 
 function initPhoneMasks() {
-  [inputLoginWhatsapp, inputRegWhatsapp].forEach((input) => {
+  [inputRegWhatsapp].forEach((input) => {
     if (!input) return;
     input.addEventListener("input", (e) => {
       let v = e.target.value.replace(/\D/g, "");
