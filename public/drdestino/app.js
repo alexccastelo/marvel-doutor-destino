@@ -156,6 +156,7 @@ const btnOpenAuthModal = document.getElementById("btnOpenAuthModal");
 const userLoggedActions = document.getElementById("userLoggedActions");
 const btnSwitchUser = document.getElementById("btnSwitchUser");
 const btnLogout = document.getElementById("btnLogout");
+const btnDeleteAccount = document.getElementById("btnDeleteAccount");
 
 // Aviso de cadastro (somente visitantes)
 const signupGate = document.getElementById("signupGate");
@@ -175,10 +176,22 @@ const inputLoginWhatsapp = document.getElementById("inputLoginWhatsapp");
 const inputRegName = document.getElementById("inputRegName");
 const inputRegEmail = document.getElementById("inputRegEmail");
 const inputRegWhatsapp = document.getElementById("inputRegWhatsapp");
+const inputRegPrivacy = document.getElementById("inputRegPrivacy");
+const inputRegMarketing = document.getElementById("inputRegMarketing");
+const btnSubmitRegister = document.getElementById("btnSubmitRegister");
 const loginErrorBox = document.getElementById("loginErrorBox");
 const regErrorBox = document.getElementById("regErrorBox");
 const linkToRegister = document.getElementById("linkToRegister");
 const linkToLogin = document.getElementById("linkToLogin");
+
+// Aviso de privacidade para cadastros antigos
+const privacyModal = document.getElementById("privacyModal");
+const formPrivacy = document.getElementById("formPrivacy");
+const inputPrivacyAccept = document.getElementById("inputPrivacyAccept");
+const inputPrivacyMarketing = document.getElementById("inputPrivacyMarketing");
+const btnSubmitPrivacy = document.getElementById("btnSubmitPrivacy");
+const privacyErrorBox = document.getElementById("privacyErrorBox");
+const btnPrivacyLogout = document.getElementById("btnPrivacyLogout");
 
 // Elementos do Modal de Edição de Data
 const dateModal = document.getElementById("dateModal");
@@ -213,6 +226,7 @@ resetBtn.addEventListener("click", handleReset);
 btnOpenAuthModal.addEventListener("click", () => openAuthModal("login"));
 btnSwitchUser.addEventListener("click", () => openAuthModal("login"));
 btnLogout.addEventListener("click", handleLogout);
+btnDeleteAccount.addEventListener("click", handleDeleteAccount);
 btnGateRegister.addEventListener("click", () => openAuthModal("register"));
 btnGateLogin.addEventListener("click", () => openAuthModal("login"));
 
@@ -230,6 +244,22 @@ linkToLogin.addEventListener("click", (e) => {
 
 formLogin.addEventListener("submit", handleLoginSubmit);
 formRegister.addEventListener("submit", handleRegisterSubmit);
+
+// O botão de cadastro só fica ativo com o aceite marcado
+inputRegPrivacy.addEventListener("change", () => {
+  btnSubmitRegister.disabled = !inputRegPrivacy.checked;
+});
+
+formPrivacy.addEventListener("submit", handlePrivacySubmit);
+inputPrivacyAccept.addEventListener("change", () => {
+  btnSubmitPrivacy.disabled = !inputPrivacyAccept.checked;
+});
+btnPrivacyLogout.addEventListener("click", () => {
+  closeDialog(privacyModal);
+  handleLogout();
+});
+// O aviso de privacidade não fecha com Esc: a pessoa aceita ou sai
+privacyModal.addEventListener("cancel", (e) => e.preventDefault());
 
 dateModalClose.addEventListener("click", closeDateModal);
 dateModalCancel.addEventListener("click", closeDateModal);
@@ -290,29 +320,39 @@ function updateUserUI() {
   signupGate.hidden = !!currentUser;
 }
 
-function openAuthModal(defaultTab = "login") {
-  loginErrorBox.style.display = "none";
-  regErrorBox.style.display = "none";
-  switchAuthTab(defaultTab);
-
-  if (typeof authModal.showModal === "function") {
-    authModal.showModal();
+function openDialog(dialog) {
+  if (typeof dialog.showModal === "function") {
+    if (!dialog.open) dialog.showModal();
   } else {
-    authModal.setAttribute("open", "true");
+    dialog.setAttribute("open", "true");
   }
+}
+
+function closeDialog(dialog) {
+  if (typeof dialog.close === "function") {
+    dialog.close();
+  } else {
+    dialog.removeAttribute("open");
+  }
+}
+
+function openAuthModal(defaultTab = "login") {
+  switchAuthTab(defaultTab);
+  openDialog(authModal);
 }
 
 function closeAuthModal() {
-  if (typeof authModal.close === "function") {
-    authModal.close();
-  } else {
-    authModal.removeAttribute("open");
-  }
+  closeDialog(authModal);
+}
+
+function hideAuthErrors() {
+  [loginErrorBox, regErrorBox].forEach((box) => {
+    box.style.display = "none";
+  });
 }
 
 function switchAuthTab(tab) {
-  loginErrorBox.style.display = "none";
-  regErrorBox.style.display = "none";
+  hideAuthErrors();
 
   if (tab === "login") {
     tabBtnLogin.classList.add("active");
@@ -330,44 +370,42 @@ function switchAuthTab(tab) {
     tabBtnLogin.setAttribute("aria-selected", "false");
     formRegister.style.display = "flex";
     formLogin.style.display = "none";
+    btnSubmitRegister.disabled = !inputRegPrivacy.checked;
     authModalDesc.textContent = "Crie seu perfil em poucos segundos para salvar seu progresso (sem necessidade de senha).";
     inputRegName.focus();
   }
 }
 
+async function postAuth(payload) {
+  const res = await fetch(API_AUTH, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { res, data };
+}
+
 async function handleLoginSubmit(e) {
   e.preventDefault();
-  loginErrorBox.style.display = "none";
+  hideAuthErrors();
 
-  const email = inputLoginEmail.value.trim();
+  const email = inputLoginEmail.value.trim().toLowerCase();
   const whatsapp = inputLoginWhatsapp.value.trim();
-
   if (!email || !whatsapp) {
     showError(loginErrorBox, "Por favor, preencha o e-mail e o WhatsApp.");
     return;
   }
 
   setDbStatus("syncing", "Autenticando...");
-
   try {
-    const res = await fetch(API_AUTH, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "login", email, whatsapp }),
-    });
-
-    const data = await res.json();
-
+    const { res, data } = await postAuth({ action: "login", email, whatsapp });
     if (!res.ok || !data.success) {
       showError(loginErrorBox, data.error || "Erro ao realizar login.");
       setDbStatus("offline", "Erro no login");
       return;
     }
-
-    saveUserSession(data.user);
-    closeAuthModal();
-    showToast(`Bem-vindo, ${data.user.name}!`);
-    await loadUserData(data.user.id);
+    await completeLogin(data.user, `Bem-vindo, ${data.user.name}!`);
   } catch (err) {
     console.error("Erro no login:", err);
     showError(loginErrorBox, "Erro de comunicação com o servidor.");
@@ -375,44 +413,116 @@ async function handleLoginSubmit(e) {
   }
 }
 
+// Sessão aberta (login ou cadastro): guarda o usuário e carrega o checklist
+async function completeLogin(user, message) {
+  saveUserSession(user);
+  closeAuthModal();
+  showToast(message);
+  // Cadastro anterior ao aviso de privacidade: mostra o aviso uma vez
+  if (!user.privacy_accepted) openPrivacyModal();
+  await loadUserData(user.id);
+}
+
 async function handleRegisterSubmit(e) {
   e.preventDefault();
-  regErrorBox.style.display = "none";
+  hideAuthErrors();
 
   const name = inputRegName.value.trim();
-  const email = inputRegEmail.value.trim();
+  const email = inputRegEmail.value.trim().toLowerCase();
   const whatsapp = inputRegWhatsapp.value.trim();
 
   if (!name || !email || !whatsapp) {
     showError(regErrorBox, "Por favor, preencha todos os campos.");
     return;
   }
-
-  setDbStatus("syncing", "Criando perfil...");
+  if (!inputRegPrivacy.checked) {
+    showError(regErrorBox, "Para se cadastrar, é preciso aceitar a Política de Privacidade.");
+    return;
+  }
 
   try {
-    const res = await fetch(API_AUTH, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "register", name, email, whatsapp }),
+    const { res, data } = await postAuth({
+      action: "register",
+      name,
+      email,
+      whatsapp,
+      privacy_accepted: true,
+      marketing_opt_in: inputRegMarketing.checked,
     });
-
-    const data = await res.json();
-
     if (!res.ok || !data.success) {
       showError(regErrorBox, data.error || "Erro ao cadastrar.");
-      setDbStatus("offline", "Erro no cadastro");
       return;
     }
-
-    saveUserSession(data.user);
-    closeAuthModal();
-    showToast(`Perfil criado com sucesso! Olá, ${data.user.name}.`);
-    await loadUserData(data.user.id);
+    await completeLogin(data.user, `Perfil criado com sucesso! Olá, ${data.user.name}.`);
   } catch (err) {
     console.error("Erro no cadastro:", err);
     showError(regErrorBox, "Erro de comunicação com o servidor.");
-    setDbStatus("offline", "Falha de conexão");
+  }
+}
+
+// ===== Privacidade (LGPD) =====
+
+function openPrivacyModal() {
+  inputPrivacyAccept.checked = false;
+  inputPrivacyMarketing.checked = false;
+  btnSubmitPrivacy.disabled = true;
+  privacyErrorBox.style.display = "none";
+  openDialog(privacyModal);
+}
+
+async function handlePrivacySubmit(e) {
+  e.preventDefault();
+  if (!inputPrivacyAccept.checked) return;
+
+  try {
+    const { res, data } = await postAuth({
+      action: "accept_privacy",
+      privacy_accepted: true,
+      marketing_opt_in: inputPrivacyMarketing.checked,
+    });
+    if (res.status === 401) {
+      closeDialog(privacyModal);
+      handleSessionExpired();
+      return;
+    }
+    if (!res.ok || !data.success) {
+      showError(privacyErrorBox, data.error || "Não foi possível registrar o aceite.");
+      return;
+    }
+    saveUserSession(data.user);
+    closeDialog(privacyModal);
+    showToast("Obrigado! Preferências salvas.");
+  } catch (err) {
+    console.error("Erro ao registrar aceite:", err);
+    showError(privacyErrorBox, "Erro de comunicação com o servidor.");
+  }
+}
+
+async function handleDeleteAccount() {
+  if (!currentUser) return;
+  const ok = confirm(
+    `Excluir o perfil de ${currentUser.name}?\n\n` +
+      "Seus dados (nome, e-mail, WhatsApp) e todo o progresso do checklist serão apagados de forma permanente."
+  );
+  if (!ok) return;
+
+  try {
+    const { res, data } = await postAuth({ action: "delete_account" });
+    if (!res.ok || !data.success) {
+      showToast(data.error || "Não foi possível excluir o perfil.");
+      return;
+    }
+    try {
+      localStorage.removeItem(`${STORAGE_PREFIX}${currentUser.id}`);
+    } catch {
+      // Sem acesso ao localStorage: nada a limpar
+    }
+    saveUserSession(null);
+    showVisitorMode("Perfil excluído");
+    showToast("Seu perfil e todo o progresso foram excluídos.");
+  } catch (err) {
+    console.error("Erro ao excluir perfil:", err);
+    showToast("Erro de comunicação com o servidor.");
   }
 }
 
@@ -436,7 +546,11 @@ async function verifySession() {
       return;
     }
     const data = await res.json();
-    if (data.success && data.user) saveUserSession(data.user);
+    if (data.success && data.user) {
+      saveUserSession(data.user);
+      // Cadastro anterior ao aviso de privacidade: mostra o aviso uma vez
+      if (!data.user.privacy_accepted) openPrivacyModal();
+    }
   } catch (err) {
     console.warn("Não foi possível verificar a sessão:", err);
   }

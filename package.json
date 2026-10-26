@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "db:migrate": "node scripts/migrate.js"
+    "db:migrate": "node scripts/migrate.js",
+    "db:migrate:prod": "node scripts/migrate.js --prod"
   },
   "engines": {
     "node": ">=22"

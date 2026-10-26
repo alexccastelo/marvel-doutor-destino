@@ -42,7 +42,21 @@ const SCHEMA_STATEMENTS = [
     expires_at TIMESTAMPTZ NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)`,
-  `CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)`
+  `CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)`,
+
+  // LGPD: aceite da política de privacidade e opt-in de comunicações
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy_accepted_at TIMESTAMPTZ`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS marketing_opt_in BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS marketing_opt_in_at TIMESTAMPTZ`,
+  // Tentativas de login que falharam, para o limite por e-mail e por IP
+  `CREATE TABLE IF NOT EXISTS login_attempts (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email TEXT NOT NULL,
+    ip TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_login_attempts_email ON login_attempts(email, created_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_login_attempts_ip ON login_attempts(ip, created_at)`
 ];
 
 module.exports = {

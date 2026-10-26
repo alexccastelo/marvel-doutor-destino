@@ -3,10 +3,17 @@ const fs = require('fs');
 const path = require('path');
 
 // Variáveis do banco (DATABASE_URL) vindas de "vercel env pull .env.local --yes"
-try {
-  process.loadEnvFile(path.join(__dirname, '.env.local'));
-} catch {
-  console.warn('Aviso: .env.local não encontrado; usando variáveis do ambiente.');
+// .env.development.local (branch de desenvolvimento do Neon) tem prioridade sobre o .env.local,
+// que aponta para o banco de produção. loadEnvFile não sobrescreve variáveis já definidas.
+for (const file of ['.env.development.local', '.env.local']) {
+  try {
+    process.loadEnvFile(path.join(__dirname, file));
+  } catch {
+    // Arquivo ausente: segue para o próximo
+  }
+}
+if (!process.env.DATABASE_URL) {
+  console.warn('Aviso: DATABASE_URL ausente; rode "vercel env pull .env.local --yes".');
 }
 
 const moviesHandler = require('./api/movies');
@@ -142,7 +149,7 @@ function serveFile(filePath, res) {
 server.listen(PORT, () => {
   console.log(`\n==================================================`);
   console.log(`🚀 Servidor Marvel Doomsday rodando em: http://localhost:${PORT}`);
-  console.log(`💾 Banco de dados: ${process.env.DATABASE_URL ? 'Postgres (Neon)' : 'DATABASE_URL ausente!'}`);
+  console.log(`💾 Banco de dados: ${process.env.DATABASE_URL ? `Postgres (Neon) em ${new URL(process.env.DATABASE_URL).host}` : 'DATABASE_URL ausente!'}`);
   console.log(`👤 Endpoints: /api/auth e /api/movies`);
   console.log(`==================================================\n`);
 });
